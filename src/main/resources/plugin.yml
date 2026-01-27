@@ -1,0 +1,7 @@
+name: KProffesionsCore
+version: '${version}'
+main: kendo.me.kproffesionscore.KProfessionsCore
+api-version: '1.16'
+depend: [ ProtocolLib ]
+commands:
+  profissoes:
