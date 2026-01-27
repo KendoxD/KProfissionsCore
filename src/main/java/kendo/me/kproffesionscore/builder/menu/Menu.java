@@ -1,9 +1,11 @@
 package kendo.me.kproffesionscore.builder.menu;
 
+import kendo.me.kproffesionscore.builder.item.ItemBuilder;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
-import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
-import kendo.me.kproffesionscore.manager.config.ConfigManager;
+import kendo.me.kproffesionscore.manager.config.ConfigUtils;
+import kendo.me.kproffesionscore.utils.ChatUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -13,7 +15,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class Menu {
-    private static ConfigManager manager = new ConfigManager();
+    private static ConfigUtils manager = new ConfigUtils();
     private Player player;
     private BiConsumer<Player, Integer> onClick;
     private Consumer<Player> onClose;
@@ -31,7 +33,7 @@ public class Menu {
         return inventory;
     }
 
-    public static ConfigManager getConfig() {
+    public static ConfigUtils getConfig() {
         return manager;
     }
 
@@ -51,7 +53,7 @@ public class Menu {
         this.player = player;
     }
 
-    public static void setManager(ConfigManager manager) {
+    public static void setManager(ConfigUtils manager) {
         Menu.manager = manager;
     }
 
@@ -59,9 +61,13 @@ public class Menu {
         this.inventory = inventory;
     }
 
-    public void fullFillInventory(ItemStack item){
+    public void fullFillInventory(){
+        //30000 - item blank
+        ItemBuilder item = new ItemBuilder(Material.PAPER)
+                .setName(ChatUtils.color("&c-"))
+                .setModelData(30000);
         for (int i = 0; i < inventory.getSize(); i++) {
-            inventory.setItem(i, item);
+            inventory.setItem(i, item.build());
         }
     }
 

@@ -1,12 +1,12 @@
 package kendo.me.kproffesionscore.builder.menu.enums;
 
-import kendo.me.kproffesionscore.manager.config.ConfigManager;
+import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 
 public enum MenuType {
     MENU_FORJA{
         @Override
-        public String getTitle(ConfigManager manager){
+        public String getTitle(ConfigUtils manager){
             return "";
         }
 
@@ -17,7 +17,7 @@ public enum MenuType {
     },
     MENU_MEDICO {
         @Override
-        public String getTitle(ConfigManager manager) {
+        public String getTitle(ConfigUtils manager) {
             return ChatUtils.color(manager.getTitleMedicMenu());
         }
         @Override
@@ -27,7 +27,7 @@ public enum MenuType {
     },
     MENU_COZINHEIRO {
         @Override
-        public String getTitle(ConfigManager manager) {
+        public String getTitle(ConfigUtils manager) {
             return "";
         }
         @Override
@@ -37,7 +37,7 @@ public enum MenuType {
     },
     MENU_CHOOSE {
         @Override
-        public String getTitle(ConfigManager manager) {
+        public String getTitle(ConfigUtils manager) {
             return ChatUtils.color(manager.getTitleChooseMenu());
         }
         @Override
@@ -46,7 +46,7 @@ public enum MenuType {
         }
     };
 
-    public abstract String getTitle(ConfigManager manager);
+    public abstract String getTitle(ConfigUtils manager);
     public abstract int getSize();
     private static final int size = 45;
 }

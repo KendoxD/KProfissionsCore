@@ -1,25 +1,28 @@
 package kendo.me.kproffesionscore.builder.menu.handlers;
 
 import kendo.me.kproffesionscore.builder.menu.Menu;
-import kendo.me.kproffesionscore.manager.config.ConfigManager;
-import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
+import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
+import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class MenuHandler implements Listener {
 
-    private final ConfigManager config;
+    private final ConfigUtils config;
     private final List<Menu> openMenus = new ArrayList<>();
-    public MenuHandler(JavaPlugin plugin, ConfigManager config){
+    public MenuHandler(JavaPlugin plugin, ConfigUtils config){
         Bukkit.getPluginManager().registerEvents(this, plugin);
         this.config = config;
     }
@@ -66,17 +69,22 @@ public class MenuHandler implements Listener {
     private void removeMenuFromHandler(@NotNull Menu menu){
         openMenus.remove(menu);
     }
-    private Menu getMenuByInventory(InventoryClickEvent event){
+    protected Menu getMenuByInventory(InventoryClickEvent event){
         return openMenus.stream()
                 .filter(menu -> menu.getInventory().equals(event.getInventory()))
                 .findFirst()
                 .orElse(null);
     }
-    private Menu getMenuByInventory(InventoryCloseEvent event){
+    protected Menu getMenuByInventory(InventoryCloseEvent event){
         return openMenus.stream()
                 .filter(menu -> menu.getInventory().equals(event.getInventory()))
                 .findFirst()
                 .orElse(null);
+    }
+
+
+    private @NotNull Menu handleCraft(InventoryClickEvent e){
+        return null;
     }
 
 
@@ -84,10 +92,11 @@ public class MenuHandler implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e){
         Menu menu = getMenuByInventory(e);
-        if(menu != null){
-            e.setCancelled(true);
-            int slot = e.getRawSlot();
-            menu.handleMenuClick(slot);
+        int rawSlot = e.getRawSlot();
+        if(menu == null) return;
+        if (rawSlot < menu.getInventory().getSize()) {
+            e.setCancelled(true); // Cancela apenas cliques dentro do menu
+            menu.handleMenuClick(rawSlot);
         }
 
     }
@@ -95,8 +104,45 @@ public class MenuHandler implements Listener {
     public void onClose(InventoryCloseEvent e){
         Menu menu = getMenuByInventory(e);
         if(menu != null){
+            for (ItemStack itemStack : menu.getInventory()) {
+                if(itemStack != null && itemStack.getType() != Material.PAPER){
+                    menu.getPlayer().getInventory().addItem(itemStack);
+                }
+            }
             menu.handleClose();
         }
+    }
 
+    @EventHandler
+    public void onMedicMenuClick(InventoryClickEvent e) {
+        Menu menu = getMenuByInventory(e);
+        if(menu == null) return;
+        Player player = menu.getPlayer();
+        ItemStack item = e.getWhoClicked().getItemOnCursor();
+        if(menu.getType() == MenuType.MENU_MEDICO){
+            int slot = e.getRawSlot();
+            Set<Integer> slotsCraft = Set.of(29,21,19,11);
+            Set<Integer> slotCrafted = Set.of(24);
+            if(slotsCraft.contains(slot)){
+                ItemStack clickedItem = e.getCurrentItem();
+                if(clickedItem != null && clickedItem.getType() == Material.PAPER){
+                    menu.getInventory().setItem(e.getSlot(), item.clone());
+                    player.setItemOnCursor(null);
+                }
+            }
+
+            if(slotCrafted.contains(slot)){
+                //enviar para funcao que vai verficiar se tem item?
+                // se tiver item - remove o item do slot do craft e tira stack dos itens colocados
+                // update menu
+            }
+        }
     }
 }
+/**
+ * [11:24:36] [Server thread/INFO]: Slots a trabalhar medico: 24
+ * [11:24:38] [Server thread/INFO]: Slots a trabalhar medico: 21
+ * [11:24:39] [Server thread/INFO]: Slots a trabalhar medico: 29
+ * [11:24:40] [Server thread/INFO]: Slots a trabalhar medico: 19
+ * [11:24:43] [Server thread/INFO]: Slots a trabalhar medico: 11
+ */
