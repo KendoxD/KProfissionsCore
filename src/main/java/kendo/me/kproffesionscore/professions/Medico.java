@@ -9,9 +9,9 @@ public class Medico extends PlayerProfession {
 
     public Medico(String nick, int profissionLevel, double profissionXp, double mastery, int healLevel, int medicinePower, int medicalMastery) {
         super(nick, profissionLevel, profissionXp, mastery);
-        this.healLevel = healLevel;
-        this.medicinePower = medicinePower;
-        this.medicalMastery = medicalMastery;
+        this.healLevel = healLevel; // depende do nivel dos outros dois?
+        this.medicinePower = medicinePower; // crafts por raridade + cura a si mesmo ou players - da xp
+        this.medicalMastery = medicalMastery; // cura apenas - da xp
     }
 
 

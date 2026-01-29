@@ -180,4 +180,42 @@ public class ConfigManager {
     }
 
 
+    /**
+     * Metodo que verifica se o craft ja existe na config
+     * @param craftName - nome do craft na config
+     * @return boolean - true existe na config, false nao existe
+     */
+    public boolean checkIfCraftExists(String craftName){
+        String basePath = "Craft." + craftName;
+        return config.contains(basePath);
+    }
+
+    public boolean checkIfIngredientExists(String craftName){
+        String basePath = "Craft." + craftName;
+        if(config.contains(basePath + ".ingredients")){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean checkIfSlotIsOcuppied(String craftName, int slot){
+        String basePath = "Craft." + craftName +".ingredients"+"."+slot;
+        return config.contains(basePath);
+    }
+
+    /**
+     *
+     * @param craftName
+     * @return
+     */
+    public int getIngredientSize(String craftName){
+        String basePath = "Craft." + craftName+".ingredients";
+        int current = config.contains(basePath)
+                ? config.getConfigurationSection(basePath).getKeys(false).size()
+                : 0;
+
+        return current;
+    }
+
+
 }

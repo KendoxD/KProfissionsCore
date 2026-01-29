@@ -13,6 +13,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+
 public class CraftCreate extends CommandBuilder {
 
     public CraftCreate(JavaPlugin plugin) {
@@ -58,20 +60,20 @@ public class CraftCreate extends CommandBuilder {
                     return;
                 }
 
-                String basePath = "Craft." + craftName;
 
-                if (config.contains(basePath)) {
+                if (configManager.checkIfCraftExists(craftName)) {
                     player.sendMessage(ChatUtils.color("&cEsse craft já existe!"));
                     return;
                 }
-                config.set(basePath + ".result.item", player.getItemInHand());
-                config.createSection(basePath + ".ingredients");
+                config.set("Craft." + craftName + ".result.item", player.getItemInHand());
+                config.createSection("Craft." + craftName + ".ingredients");
 
                 configManager.saveYaml(config, ConfigPaths.CRAFTS.getPath(), profissao + ".yml");
 
                 player.sendMessage(ChatUtils.color("&aCraft criado com sucesso!"));
             }
 
+            //TODO: refactor code?
             case "add" -> {
                 if (args.length < 6) {
                     player.sendMessage(ChatUtils.color("&cUse: /profissoes admin craft add <profissao> <nomeCraft> <slot>"));
@@ -83,37 +85,43 @@ public class CraftCreate extends CommandBuilder {
                 }
 
                 int slot;
+                boolean exists = false;
+                int [] craftSlots = ProfessionCraftItemLimit.getValidSlots(profissao);
                 try {
                     slot = Integer.parseInt(args[5]);
-                    if(slot >45 || slot <=0) {
-                        player.sendMessage(ChatUtils.color("&cSlot inválido!"));
-                        return;
+                    for (int craftSlot : craftSlots) {
+                        if (slot == craftSlot) {
+                            exists = true;
+                            break;
+                        }
                     }
                 } catch (NumberFormatException e) {
                     player.sendMessage(ChatUtils.color("&cSlot inválido!"));
                     return;
                 }
-                String basePath = "Craft." + craftName;
-                if (!config.contains(basePath + ".result.item")) {
+                if(!exists || slot > 45 || slot <=0){
+                    player.sendMessage(ChatUtils.color("&cSlot inválido!"));
+                    player.sendMessage(ChatUtils.color("&aSlots validos: " + Arrays.toString(Arrays.stream(Arrays.stream(craftSlots).toArray()).sorted().toArray())));
+                    return;
+                }
+                if (!configManager.checkIfCraftExists(craftName)) {
+                    System.out.println(craftName);
                     player.sendMessage(ChatUtils.color("&cEsse craft não existe!"));
                     return;
                 }
-                String ingredientsPath = basePath + ".ingredients";
                 int max = ProfessionCraftItemLimit.getLimit(profissao);
-                int current = config.contains(ingredientsPath)
-                        ? config.getConfigurationSection(ingredientsPath).getKeys(false).size()
-                        : 0;
+                int current = configManager.getIngredientSize(craftName);
 
                 if (current >= max) {
                     player.sendMessage(ChatUtils.color("&cEsse craft já atingiu o limite de " + max + " ingredientes."));
                     return;
                 }
-                if (config.contains(ingredientsPath + "." + slot)) {
+                if (configManager.checkIfSlotIsOcuppied(craftName, slot)) {
                     player.sendMessage(ChatUtils.color("&cJá existe um item nesse slot!"));
                     return;
                 }
 
-                config.set(ingredientsPath + "." + slot + ".item", player.getItemInHand());
+                config.set("Craft." + craftName+".ingredients" + "." + slot + ".item", player.getItemInHand());
                 configManager.saveYaml(config, ConfigPaths.CRAFTS.getPath(), profissao + ".yml");
 
                 player.sendMessage(ChatUtils.color("&aIngrediente adicionado no slot &e" + slot));

@@ -61,3 +61,15 @@ public final class KProfessionsCore extends JavaPlugin {
         new ReloadCommand(this, config);
     }
 }
+
+///
+// Core:
+// todo: adicionar o resto dos Dao - pensar na questao de level up, pensar na config de profissao (sem craft)
+// Crafts
+// TODO:
+//  - comando pra listar crafts existentes? - admin
+//  - comando pra remover craft
+//  - arrumar menu handler pra lidar com a questao dos crafts
+//  - Conquistas crafts
+//  - adicionar raridade de crafts - adicioar cap de craft q ser feito dependendo do lvl
+//
