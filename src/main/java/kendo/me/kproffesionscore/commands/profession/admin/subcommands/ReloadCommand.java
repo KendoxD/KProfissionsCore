@@ -1,8 +1,6 @@
-package kendo.me.kproffesionscore.commands.profession.admin;
+package kendo.me.kproffesionscore.commands.profession.admin.subcommands;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
-import kendo.me.kproffesionscore.manager.config.paths.ConfigPaths;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;

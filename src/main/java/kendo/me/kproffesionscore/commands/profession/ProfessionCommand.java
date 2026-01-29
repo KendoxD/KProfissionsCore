@@ -1,20 +1,18 @@
 package kendo.me.kproffesionscore.commands.profession;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
-import kendo.me.kproffesionscore.builder.item.ItemBuilder;
 import kendo.me.kproffesionscore.builder.menu.Menu;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
-import kendo.me.kproffesionscore.commands.profession.admin.CraftCreate;
-import kendo.me.kproffesionscore.commands.profession.admin.ReloadCommand;
+import kendo.me.kproffesionscore.commands.profession.admin.CraftCommand;
+import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
 import kendo.me.kproffesionscore.utils.ChatUtils;
-import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class ProfessionCommand extends CommandBuilder {
@@ -25,13 +23,6 @@ public class ProfessionCommand extends CommandBuilder {
                 .setAction(((player, args) ->{
                     ProfissionDatabase dbManager = KProfessionsCore.getDatabase();
                     Menu menu;
-                    //teste:
-                    List lore = new ArrayList<>();
-                    lore.add("&aTeste11");
-                    lore.add("&clore kkj");
-                    ItemBuilder item = new ItemBuilder(Material.HONEY_BOTTLE).setName("&aT&ce&beste").setLore(lore).setModelData(6);
-                    player.getInventory().setItem(1, item.build());
-                    //
                     if(args.length == 0) {
                         if(dbManager.playerExists(player.getDisplayName())){
                             String profission = dbManager.getPlayerProfession(player.getDisplayName());
@@ -66,9 +57,10 @@ public class ProfessionCommand extends CommandBuilder {
 
                     switch(subCommand) {
                         case "reload" -> new ReloadCommand(plugin, KProfessionsCore.getConfigManager()).execute(player, args);
-                        case "craft" -> new CraftCreate(plugin).execute(player, args);
+                        case "craft" -> new CraftCommand(plugin).execute(player, args);
                         default -> player.sendMessage(ChatUtils.color("&Subcomando admin inválido: " + subCommand));
                     }
                 })).register();
     }
+
 }

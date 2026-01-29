@@ -2,7 +2,7 @@ package kendo.me.kproffesionscore;
 
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.profession.ProfessionCommand;
-import kendo.me.kproffesionscore.commands.profession.admin.ReloadCommand;
+import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
 import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;

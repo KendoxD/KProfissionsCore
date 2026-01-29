@@ -4,12 +4,15 @@ import kendo.me.kproffesionscore.manager.config.paths.ConfigFiles;
 import kendo.me.kproffesionscore.manager.config.paths.ConfigPaths;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConfigManager {
 
@@ -198,13 +201,19 @@ public class ConfigManager {
         return false;
     }
 
+    /**
+     *
+     * @param craftName
+     * @param slot
+     * @return
+     */
     public boolean checkIfSlotIsOcuppied(String craftName, int slot){
         String basePath = "Craft." + craftName +".ingredients"+"."+slot;
         return config.contains(basePath);
     }
 
     /**
-     *
+     * Retorna o numero de ingredientes daquele craft ja existentes.
      * @param craftName
      * @return
      */
@@ -217,5 +226,44 @@ public class ConfigManager {
         return current;
     }
 
+    /**
+     * Metodo pra retornar todos crafts de X profissao
+     * @param config - arquivo yml da profissao na pasta crafts
+     * @param professionName - nome da profissao
+     * @return uma lista de Strings com a mensagem formatada
+     */
+    public List<String> getFormattedCraftList(@NotNull YamlConfiguration config, String professionName) {
+        List<String> lines = new ArrayList<>();
 
+        if (!config.contains("Craft") || config.getConfigurationSection("Craft") == null) {
+            lines.add(ChatUtils.color("&cEsta profissão não possui crafts registrados."));
+            return lines;
+        }
+
+        lines.add(ChatUtils.color("&a=== Lista de Crafts: &e" + professionName.toUpperCase() + " &a==="));
+        //procura dentro da section craft inteira
+        for (String craftName : config.getConfigurationSection("Craft").getKeys(false)) {
+            lines.add(ChatUtils.color("&bCraft: &f" + craftName));
+            // procura os ingredientes registrados dentro do craft
+            String path = "Craft." + craftName + ".ingredients";
+            if (!config.contains(path) || config.getConfigurationSection(path) == null) {
+                lines.add(ChatUtils.color("  &8- &7Sem ingredientes registrados."));
+                continue;
+            }
+            // Checa dentro dos slots
+            for (String slot : config.getConfigurationSection(path).getKeys(false)) {
+                ItemStack item = config.getItemStack(path + "." + slot + ".item");
+                String itemName = "Desconhecido";
+
+                if (item != null) {
+                    itemName = (item.hasItemMeta() && item.getItemMeta().hasDisplayName())
+                            ? item.getItemMeta().getDisplayName()
+                            : item.getType().name();
+                }
+
+                lines.add(ChatUtils.color("  &8- Slot &e" + slot + "&7: &f" + itemName));
+            }
+        }
+        return lines;
+    }
 }
