@@ -253,7 +253,7 @@ public class ConfigManager {
             // Checa dentro dos slots
             for (String slot : config.getConfigurationSection(path).getKeys(false)) {
                 ItemStack item = config.getItemStack(path + "." + slot + ".item");
-                String itemName = "Desconhecido";
+                String itemName = "Bugged";
 
                 if (item != null) {
                     itemName = (item.hasItemMeta() && item.getItemMeta().hasDisplayName())
