@@ -2,6 +2,7 @@ package kendo.me.kproffesionscore.builder.menu;
 
 import kendo.me.kproffesionscore.builder.item.ItemBuilder;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
+import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
 import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import org.bukkit.Bukkit;
@@ -11,6 +12,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -26,6 +29,7 @@ public class Menu {
         this.player = player;
         this.type = type;
         this.inventory = Bukkit.createInventory(player, type.getSize(), type.getTitle(manager));
+        fullFillInventory();
     }
 
 
@@ -66,8 +70,17 @@ public class Menu {
         ItemBuilder item = new ItemBuilder(Material.PAPER)
                 .setName(ChatUtils.color("&c-"))
                 .setModelData(30000);
+        List<Integer> allowedSlots = new ArrayList<>();
+        for(int s : getType().getSlots()) allowedSlots.add(s);
+
         for (int i = 0; i < inventory.getSize(); i++) {
-            inventory.setItem(i, item.build());
+            if(allowedSlots.isEmpty()){
+                inventory.setItem(i, item.build());
+            } else {
+                if (!allowedSlots.contains(i)) {
+                    inventory.setItem(i, item.build());
+                }
+            }
         }
     }
 

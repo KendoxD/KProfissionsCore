@@ -4,7 +4,7 @@ import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 
 public enum MenuType {
-    MENU_FORJA{
+    MENU_FORJA(new int[]{}){
         @Override
         public String getTitle(ConfigUtils manager){
             return "";
@@ -15,7 +15,7 @@ public enum MenuType {
             return size;
         }
     },
-    MENU_MEDICO {
+    MENU_MEDICO(new int[]{29, 21, 19, 11,24}) {
         @Override
         public String getTitle(ConfigUtils manager) {
             return ChatUtils.color(manager.getTitleMedicMenu());
@@ -25,7 +25,7 @@ public enum MenuType {
             return size;
         }
     },
-    MENU_COZINHEIRO {
+    MENU_COZINHEIRO(new int[]{}) {
         @Override
         public String getTitle(ConfigUtils manager) {
             return "";
@@ -35,7 +35,7 @@ public enum MenuType {
             return size;
         }
     },
-    MENU_CHOOSE {
+    MENU_CHOOSE(new int[]{}) {
         @Override
         public String getTitle(ConfigUtils manager) {
             return ChatUtils.color(manager.getTitleChooseMenu());
@@ -46,7 +46,16 @@ public enum MenuType {
         }
     };
 
+    MenuType(int[] slots) {
+        this.slots = slots;
+    }
+
     public abstract String getTitle(ConfigUtils manager);
     public abstract int getSize();
     private static final int size = 45;
+
+    public int[] getSlots() {
+        return slots;
+    }
+    private final int[] slots;
 }

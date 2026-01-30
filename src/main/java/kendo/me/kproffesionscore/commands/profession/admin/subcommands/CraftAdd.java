@@ -3,6 +3,7 @@ package kendo.me.kproffesionscore.commands.profession.admin.subcommands;
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.commands.action.CommandAction;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
+import kendo.me.kproffesionscore.crafts.CraftManager;
 import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
 import kendo.me.kproffesionscore.manager.config.paths.ConfigFiles;
@@ -34,6 +35,7 @@ public class CraftAdd extends CommandBuilder implements CommandAction {
         String profissao = args[3].toLowerCase();
         String craftName = args[4];
         ConfigManager configManager = KProfessionsCore.getConfigManager();
+        CraftManager craftManager = KProfessionsCore.getCraftManager();
 
         // Busca a config da profissão
         YamlConfiguration config = null;
@@ -98,7 +100,7 @@ public class CraftAdd extends CommandBuilder implements CommandAction {
         // Salvando o item na config
         config.set("Craft." + craftName + ".ingredients." + slot + ".item", player.getInventory().getItemInHand());
         configManager.saveYaml(config, ConfigPaths.CRAFTS.getPath(), profissao + ".yml");
-
         player.sendMessage(ChatUtils.color("&aIngrediente adicionado no slot &e" + slot));
+        craftManager.loadAll();  // reiniciar o map
     }
 }

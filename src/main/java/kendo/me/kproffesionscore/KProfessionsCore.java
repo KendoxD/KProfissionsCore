@@ -3,6 +3,7 @@ package kendo.me.kproffesionscore;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.profession.ProfessionCommand;
 import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
+import kendo.me.kproffesionscore.crafts.CraftManager;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
 import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
@@ -16,13 +17,13 @@ public final class KProfessionsCore extends JavaPlugin {
     private MenuHandler menuHandler;
     private static ProfissionDatabase dbManager;
     private static ConfigManager config;
+    private static CraftManager craftManager;
 
     @Override
     public void onEnable() {
         Bukkit.getLogger().severe("Initialized!");
 
         saveDefaultConfig();
-
         config = new ConfigManager(this);
         try {
             config.initDirectorys();
@@ -30,11 +31,12 @@ public final class KProfessionsCore extends JavaPlugin {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        craftManager = new CraftManager(this, config);
         menuHandler = new MenuHandler(getInstance(), new ConfigUtils());
         registerCommands();
 
         dbManager = new ProfissionDatabase(getDataFolder());
+        craftManager.loadAll();
     }
 
 
@@ -55,11 +57,17 @@ public final class KProfessionsCore extends JavaPlugin {
     public static ConfigManager getConfigManager() {
         return config;
     }
+    public static CraftManager getCraftManager() {
+        return craftManager;
+    }
+
 
     private void registerCommands(){
         new ProfessionCommand(this, menuHandler);
         new ReloadCommand(this, config);
     }
+
+
 }
 
 ///
@@ -67,7 +75,6 @@ public final class KProfessionsCore extends JavaPlugin {
 // todo: adicionar o resto dos Dao - pensar na questao de level up, pensar na config de profissao (sem craft)
 // Crafts
 // TODO:
-//  - comando pra listar crafts existentes? - admin
 //  - comando pra remover craft
 //  - arrumar menu handler pra lidar com a questao dos crafts
 //  - Conquistas crafts

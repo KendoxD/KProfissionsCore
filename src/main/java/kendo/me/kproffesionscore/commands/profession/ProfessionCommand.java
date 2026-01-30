@@ -7,13 +7,17 @@ import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
 import kendo.me.kproffesionscore.commands.profession.admin.CraftCommand;
 import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
+import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
+import kendo.me.kproffesionscore.professions.Medico;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class ProfessionCommand extends CommandBuilder {
     public ProfessionCommand(JavaPlugin plugin, MenuHandler menuHandler){
@@ -28,11 +32,36 @@ public class ProfessionCommand extends CommandBuilder {
                             String profission = dbManager.getPlayerProfession(player.getDisplayName());
                             if(Objects.equals(profission, "medico")){
                                 menu = new Menu(player, MenuType.MENU_MEDICO);
-                                menu.fullFillInventory();
                                 menuHandler.openMenu(menu);
                             }
                         } else {
-                            menuHandler.openMenu(new Menu(player, MenuType.MENU_CHOOSE));
+                            menu = new Menu(player, MenuType.MENU_CHOOSE);
+                            menuHandler.openMenu(menu);
+                            menu.setOnClick(((p, slot) -> {
+                                Set<Integer> slotsMedico = Set.of(4, 5, 6, 13, 14, 15, 22, 23, 24);
+                                Set<Integer> slotsCombatente = Set.of(27, 28, 29, 36, 37, 38);
+                                Set<Integer> slotsCozinheiro = Set.of(33, 34, 35, 42, 43, 44);
+
+                                if (slotsMedico.contains(slot)) {
+                                    MedicoDao medicoDao = new MedicoDao(dbManager.getConnection());
+                                    Medico medic = new Medico(player.getDisplayName(), 1, 0, 1, 1, 1, 1);
+                                    medicoDao.save(medic);
+                                    menuHandler.closeMenu(menu);
+                                    player.sendTitle(ChatUtils.color("&aVocê escolheu a profissão: Médico!"), "", 2,10,20
+                                    );
+                                }
+                                if (slotsCombatente.contains(slot)) {
+                                    player.sendMessage(ChatUtils.color(
+                                            "&c[Professions] Parabéns, você escolheu a profissão: Combatente !"
+                                    ));
+                                }
+                                if (slotsCozinheiro.contains(slot)) {
+                                    player.sendMessage(ChatUtils.color(
+                                            "&c[Professions] Parabéns, você escolheu a profissão: Cozinheiro !"
+                                    ));
+                                }
+                                ;
+                            }));
                         }
                         return;
                     }

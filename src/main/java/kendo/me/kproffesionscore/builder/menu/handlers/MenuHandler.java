@@ -1,29 +1,23 @@
 package kendo.me.kproffesionscore.builder.menu.handlers;
 
-import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.builder.menu.Menu;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
+import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
 import kendo.me.kproffesionscore.manager.config.ConfigUtils;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public class MenuHandler implements Listener {
 
@@ -124,27 +118,48 @@ public class MenuHandler implements Listener {
     public void onMedicMenuClick(InventoryClickEvent e) {
         Menu menu = getMenuByInventory(e);
         if(menu == null) return;
+        if(menu.getType().equals(MenuType.MENU_MEDICO));
         Player player = menu.getPlayer();
         ItemStack item = e.getWhoClicked().getItemOnCursor();
-        if(menu.getType() == MenuType.MENU_MEDICO){
-            int slot = e.getRawSlot();
-            Set<Integer> slotsCraft = Set.of(29,21,19,11);
-            Set<Integer> slotCrafted = Set.of(24);
-            if(slotsCraft.contains(slot)){
-                ItemStack clickedItem = e.getCurrentItem();
-                if(clickedItem != null && clickedItem.getType() == Material.PAPER){
-                    menu.getInventory().setItem(e.getSlot(), item.clone());
-                    player.setItemOnCursor(null);
-                }
-            }
-
-            if(slotCrafted.contains(slot)){
-                //enviar para funcao que vai verficiar se tem item?
-                // se tiver item - remove o item do slot do craft e tira stack dos itens colocados
-                // update menu
+        int [] validSlots = ProfessionCraftItemLimit.MEDICO.getSlots();
+        for (int validSlot : validSlots) {
+            if(e.getRawSlot() == validSlot){
+                addItemToSlot(e,menu.getInventory(), validSlot, item);
             }
         }
     }
+
+
+    /**
+     * Metodo para adicionar item no slot dependendo do ClickType
+     * @param e - evento de click no inventario
+     * @param inv - inventario atual
+     * @param validSlot - slot valido pra adicionar item
+     * @param item - item no cursor do player;
+     */
+    private void addItemToSlot(InventoryClickEvent e , Inventory inv, int validSlot,ItemStack item){
+        ItemStack current =  e.getInventory().getItem(e.getRawSlot());
+        ItemStack itemToAdd = item.clone();
+        if(e.getClick().isRightClick()){
+            if(current == null|| current.getType() == Material.AIR) {
+                itemToAdd.setAmount(1);
+                inv.setItem(validSlot, itemToAdd);
+            } else if(current.getType() == item.getType()){
+                current.setAmount(current.getAmount()+1);
+            }
+            item.setAmount(item.getAmount()-1);
+            if(item.getAmount() <= 0){
+                item.setAmount(0);
+            }
+        } else if(e.getClick().isLeftClick()){
+            if(current == null|| current.getType() == Material.AIR ) {
+                if(e.getCursor() == null) return;
+                inv.setItem(e.getRawSlot(), item.clone());
+                item.setAmount(0);
+            }
+        }
+    }
+
 }
 /**
  * [11:24:36] [Server thread/INFO]: Slots a trabalhar medico: 24

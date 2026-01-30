@@ -3,6 +3,7 @@ package kendo.me.kproffesionscore.commands.profession.admin.subcommands;
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.commands.action.CommandAction;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
+import kendo.me.kproffesionscore.crafts.CraftManager;
 import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
 import kendo.me.kproffesionscore.manager.config.paths.ConfigFiles;
@@ -42,6 +43,7 @@ public class CraftCreate extends CommandBuilder implements CommandAction {
 
         ConfigManager configManager = KProfessionsCore.getConfigManager();
         YamlConfiguration config = null;
+        CraftManager craftManager = KProfessionsCore.getCraftManager();
 
         // Busca o arquivo correto da profissão
         for (ConfigFiles file : ConfigFiles.values()) {
@@ -63,7 +65,6 @@ public class CraftCreate extends CommandBuilder implements CommandAction {
                     return;
                 }
 
-
                 if (configManager.checkIfCraftExists(craftName)) {
                     player.sendMessage(ChatUtils.color("&cEsse craft já existe!"));
                     return;
@@ -74,6 +75,7 @@ public class CraftCreate extends CommandBuilder implements CommandAction {
                 configManager.saveYaml(config, ConfigPaths.CRAFTS.getPath(), profissao + ".yml");
 
                 player.sendMessage(ChatUtils.color("&aCraft criado com sucesso!"));
+                craftManager.loadAll(); // reiniciar o map
             }
             default -> player.sendMessage(ChatUtils.color("&cAção inválida: " + action));
         }
