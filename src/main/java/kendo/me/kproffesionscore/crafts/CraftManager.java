@@ -72,22 +72,19 @@ public class CraftManager {
         if (options == null) return null;
         for (CraftLoader recipe : options) {
             if (recipe.getIngredients().size() != currentGrid.size()) continue;
-
             boolean match = true;
             for (Map.Entry<Integer, ItemStack> entry : recipe.getIngredients().entrySet()) {
                 ItemStack placed = currentGrid.get(entry.getKey());
-
                 if (placed == null || !placed.isSimilar(entry.getValue()) || placed.getAmount() < entry.getValue().getAmount()) {
                     match = false;
                     break;
                 }
             }
+
             if (match) return recipe;
         }
         return null;
     }
-
-
 
     // Only Debug
     public List<String> getAllCraftNames() {
@@ -99,8 +96,6 @@ public class CraftManager {
         }
         return names;
     }
-
-
 
     // Only Debug
     public void debugLoadedCrafts() {
