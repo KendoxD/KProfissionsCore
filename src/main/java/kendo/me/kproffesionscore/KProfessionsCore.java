@@ -1,5 +1,8 @@
 package kendo.me.kproffesionscore;
 
+import kendo.me.kproffesionscore.entities.SeringaProjectil;
+import kendo.me.kproffesionscore.entities.events.SeringeEvent;
+import kendo.me.kproffesionscore.entities.manager.EntityManager;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.profession.ProfessionCommand;
 import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
@@ -18,11 +21,14 @@ public final class KProfessionsCore extends JavaPlugin {
     private static ProfissionDatabase dbManager;
     private static ConfigManager config;
     private static CraftManager craftManager;
-
+    private static EntityManager entityManager;
     @Override
     public void onEnable() {
         Bukkit.getLogger().severe("Initialized!");
 
+        entityManager = new EntityManager();
+        // Roda a cada 1 tick (0.05 segundos)
+        entityManager.runTaskTimer(this, 0L, 1L);
         saveDefaultConfig();
         config = new ConfigManager(this);
         try {
@@ -34,7 +40,7 @@ public final class KProfessionsCore extends JavaPlugin {
         craftManager = new CraftManager(this, config);
         menuHandler = new MenuHandler(getInstance(), new ConfigUtils());
         registerCommands();
-
+        registerEvents();
         dbManager = new ProfissionDatabase(getDataFolder());
         craftManager.loadAll();
     }
@@ -44,6 +50,7 @@ public final class KProfessionsCore extends JavaPlugin {
     public void onDisable() {
         Bukkit.getLogger().severe("Disabled!");
         menuHandler.clear();
+        entityManager.removeAllEntities();
     }
 
     public static JavaPlugin getInstance(){
@@ -61,11 +68,19 @@ public final class KProfessionsCore extends JavaPlugin {
         return craftManager;
     }
 
+    public static EntityManager getEntityManager(){
+        return  entityManager;
+    }
 
     private void registerCommands(){
         new ProfessionCommand(this, menuHandler);
         new ReloadCommand(this, config);
     }
+
+    private void registerEvents(){
+        new SeringeEvent(this);
+    }
+
 
 
 }
@@ -74,6 +89,7 @@ public final class KProfessionsCore extends JavaPlugin {
 // Core:
 // todo: adicionar o resto dos Dao - pensar na questao de level up, pensar na config de profissao (sem craft)
 // Crafts
+// todo: deixar seringas configuraveis na config de medico.yml (fora do path crafs)
 // TODO:
 //  - comando pra remover craft
 //  - Conquistas crafts

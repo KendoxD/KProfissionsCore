@@ -1,6 +1,9 @@
 package kendo.me.kproffesionscore.commands.profession;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
+import kendo.me.kproffesionscore.builder.entities.CustomEntity;
+import kendo.me.kproffesionscore.builder.entities.EntityBuilder;
+import kendo.me.kproffesionscore.builder.item.ItemBuilder;
 import kendo.me.kproffesionscore.builder.menu.Menu;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
@@ -12,10 +15,7 @@ import kendo.me.kproffesionscore.professions.Medico;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
 import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
 import java.util.Set;
 
