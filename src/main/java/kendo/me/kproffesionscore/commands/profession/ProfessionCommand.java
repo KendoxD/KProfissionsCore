@@ -1,20 +1,18 @@
 package kendo.me.kproffesionscore.commands.profession;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
-import kendo.me.kproffesionscore.builder.entities.CustomEntity;
-import kendo.me.kproffesionscore.builder.entities.EntityBuilder;
-import kendo.me.kproffesionscore.builder.item.ItemBuilder;
 import kendo.me.kproffesionscore.builder.menu.Menu;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
 import kendo.me.kproffesionscore.commands.profession.admin.CraftCommand;
+import kendo.me.kproffesionscore.commands.profession.admin.subcommands.GiveMedicItem;
 import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
-import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
 import kendo.me.kproffesionscore.professions.Medico;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
 import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
+import kendo.me.kproffesionscore.utils.skript.SkriptUtils;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Objects;
 import java.util.Set;
@@ -27,8 +25,11 @@ public class ProfessionCommand extends CommandBuilder {
                 .setAction(((player, args) ->{
                     ProfissionDatabase dbManager = KProfessionsCore.getDatabase();
                     Menu menu;
+
                     if(args.length == 0) {
                         if(dbManager.playerExists(player.getDisplayName())){
+                            SkriptUtils.setVariable(player, "vit", 200);
+                            SkriptUtils.setVariable(player, "str", 300);
                             String profission = dbManager.getPlayerProfession(player.getDisplayName());
                             if(Objects.equals(profission, "medico")){
                                 menu = new Menu(player, MenuType.MENU_MEDICO);
@@ -85,6 +86,7 @@ public class ProfessionCommand extends CommandBuilder {
                     String subCommand = args[1].toLowerCase();
 
                     switch(subCommand) {
+                        case "medico" -> new GiveMedicItem(plugin).execute(player, args);
                         case "reload" -> new ReloadCommand(plugin, KProfessionsCore.getConfigManager()).execute(player, args);
                         case "craft" -> new CraftCommand(plugin).execute(player, args);
                         default -> player.sendMessage(ChatUtils.color("&Subcomando admin inválido: " + subCommand));

@@ -12,6 +12,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +27,7 @@ public class CustomEntity {
     private final List<Player> viewers = new ArrayList<>();
     private final CustomHitBox hitBox;
 
-    public CustomEntity(EntityBuilder builder, boolean debugMode) {
+    public CustomEntity(@NotNull EntityBuilder builder, boolean debugMode) {
         this.settings = builder;
         this.currentLocation = builder.getLocation();
         this.entityId = builder.getEntityId();
@@ -80,7 +82,7 @@ public class CustomEntity {
         }.runTaskLater(KProfessionsCore.getInstance(), 2L);
     }
 
-    public void teleport(Location loc) {
+    public void teleport(@NotNull Location loc) {
         this.currentLocation = loc;
         ProtocolManager pm = ProtocolLibrary.getProtocolManager();
         PacketContainer tele = pm.createPacket(PacketType.Play.Server.ENTITY_TELEPORT);
@@ -102,13 +104,32 @@ public class CustomEntity {
         this.viewers.clear();
     }
 
-    private void sendPacket(List<Player> players, PacketContainer... packets) {
+    private void sendPacket(@NotNull List<Player> players, PacketContainer... packets) {
         for (Player p : players) {
             if (!p.isOnline()) continue;
             try {
                 for (PacketContainer packet : packets) ProtocolLibrary.getProtocolManager().sendServerPacket(p, packet);
             } catch (Exception ignored) {}
         }
+    }
+    public void spawnParticle(org.bukkit.Particle particle, int count, double offset) {
+        if (viewers.isEmpty()) return;
+
+        ProtocolManager pm = ProtocolLibrary.getProtocolManager();
+        PacketContainer packet = pm.createPacket(PacketType.Play.Server.WORLD_PARTICLES);
+        packet.getNewParticles().write(0, WrappedParticle.create(particle, null));
+        packet.getDoubles()
+                .write(0, currentLocation.getX())
+                .write(1, currentLocation.getY() + 0.7)
+                .write(2, currentLocation.getZ());
+        packet.getFloat().write(0, (float) offset); // X
+        packet.getFloat().write(1, (float) offset); // Y
+        packet.getFloat().write(2, (float) offset); // Z o
+        packet.getFloat().write(3, 0F);
+        packet.getIntegers().write(0, count);
+        packet.getBooleans().write(0, false);
+
+        sendPacket(this.viewers, packet);
     }
 
     public void drawHitbox() { if (debugMode) hitBox.draw(currentLocation, viewers, false); }

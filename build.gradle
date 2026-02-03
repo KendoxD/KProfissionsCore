@@ -8,6 +8,7 @@ version = '1.0'
 repositories {
     mavenCentral()
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' } // Spigot API snapshots
+    maven { url 'https://repo.skriptlang.org/releases' }
 }
 
 // Dependências
@@ -15,7 +16,7 @@ dependencies {
     // Spigot API 1.16.5 (apenas para compilar)
     compileOnly 'org.spigotmc:spigot-api:1.16.5-R0.1-SNAPSHOT'
     compileOnly 'org.jetbrains:annotations:24.0.1'
-    // ProtocolLib 4.6.0 (apenas para compilar)
+    compileOnly 'com.github.SkriptLang:Skript:2.6.4'
     compileOnly files('libs/ProtocolLib.jar') // permite usar as classes no IDE e compilar
     implementation files('libs/ProtocolLib.jar') // IDE autocompletion
 }

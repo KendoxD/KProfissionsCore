@@ -36,9 +36,9 @@ public class EntityManager extends BukkitRunnable {
 //        for (CustomEntity entity : new ArrayList<>(activeEntities)) {
 //            for (Player p : Bukkit.getOnlinePlayers()) {
 //                if (entity.isInside(p.getLocation()) || entity.isInside(p.getEyeLocation())) {
-//                    p.sendTitle("", "§c§lDENTRO DA HITBOX", 0, 5, 0);
+//                    p.sendTitle("", ChatUtils.color("&c&lDENTRO DA HITBOX"), 0, 5, 0);
 //                }
 //            }
-//        }
+//        }w
     }
 }

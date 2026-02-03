@@ -2,14 +2,12 @@ package kendo.me.kproffesionscore.builder.menu;
 
 import kendo.me.kproffesionscore.builder.item.ItemBuilder;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
-import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
-import kendo.me.kproffesionscore.manager.config.ConfigUtils;
+import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

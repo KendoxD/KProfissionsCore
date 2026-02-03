@@ -5,15 +5,15 @@ import kendo.me.kproffesionscore.builder.entities.ProjectileBuilder;
 import kendo.me.kproffesionscore.entities.projectil.CustomProjectil;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-//TODO: clean this bitch
-public class SeringaProjectil extends CustomProjectil implements Listener {
-
-    public SeringaProjectil(ProjectileBuilder builder) {
+public class GreenSeringeProjectil extends CustomProjectil implements Listener {
+    //TODO: Javadocs this shit
+    public GreenSeringeProjectil(ProjectileBuilder builder) {
         super(builder);
         Bukkit.getPluginManager().registerEvents(this, KProfessionsCore.getInstance());
     }
@@ -21,10 +21,10 @@ public class SeringaProjectil extends CustomProjectil implements Listener {
     @Override
     public void onHitPlayer(Player player) {
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.5f);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 5, 1));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 20 * 5, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 80, 4));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 20 * 200, 2));
 
-        player.sendTitle("", ChatUtils.color("&cVoce foi atingido!!"), 5,10,5);
+        player.sendTitle("", ChatUtils.color("&cVoce foi atingido por uma seringa!!"), 5,10,10);
     }
 
     @Override
@@ -33,11 +33,7 @@ public class SeringaProjectil extends CustomProjectil implements Listener {
     }
     @Override
     public void onTick() {
-        entity.getEntityLocation().getWorld().spawnParticle(
-                org.bukkit.Particle.VILLAGER_HAPPY,
-                entity.getEntityLocation(),
-                1, 0.1, 0.1, 0.1, 0
-        );
+        entity.spawnParticle(Particle.VILLAGER_HAPPY, 1, 0.05);
     }
 
 

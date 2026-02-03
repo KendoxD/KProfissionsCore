@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class CraftManager {
      * @param currentGrid
      * @return o objeto do craftLoader pra facilitar as alteracoes no inventario do player / givar o item pro player
      */
-    public CraftLoader findMatch(String profession, Map<Integer, ItemStack> currentGrid) {
+    public CraftLoader findMatch(@NotNull String profession, Map<Integer, ItemStack> currentGrid) {
         List<CraftLoader> options = recipesByProfession.get(profession);
         if (options == null) return null;
         for (CraftLoader recipe : options) {

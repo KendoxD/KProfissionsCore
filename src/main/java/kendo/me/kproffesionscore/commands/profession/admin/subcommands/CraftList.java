@@ -21,7 +21,6 @@ public class CraftList extends CommandBuilder implements CommandAction {
 
     @Override
     public void execute(Player player, @Nullable String[] args) {
-      //TODO: do this bitch
         if (args == null || args.length < 4) {
             player.sendMessage(ChatUtils.color("&cUse: /profissoes admin craft <list> <profissao>"));
             return;

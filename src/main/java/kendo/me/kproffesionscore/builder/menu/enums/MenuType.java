@@ -1,6 +1,6 @@
 package kendo.me.kproffesionscore.builder.menu.enums;
 
-import kendo.me.kproffesionscore.manager.config.ConfigUtils;
+import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 
 public enum MenuType {

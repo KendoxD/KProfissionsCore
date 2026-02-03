@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class CustomProjectil extends BukkitRunnable {
+    //TODO: Javadocs this shit
     protected final CustomEntity entity;
     protected final Vector velocity;
     protected final double gravity;

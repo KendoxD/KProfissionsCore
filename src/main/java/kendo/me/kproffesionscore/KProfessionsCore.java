@@ -1,17 +1,26 @@
 package kendo.me.kproffesionscore;
 
-import kendo.me.kproffesionscore.entities.SeringaProjectil;
-import kendo.me.kproffesionscore.entities.events.SeringeEvent;
+import kendo.me.kproffesionscore.entities.events.GreenSeringeEvent;
+import kendo.me.kproffesionscore.entities.events.ThrowableMedicKit;
+import kendo.me.kproffesionscore.entities.events.MedicKitEvent;
+import kendo.me.kproffesionscore.entities.events.RedSeringeEvent;
 import kendo.me.kproffesionscore.entities.manager.EntityManager;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.profession.ProfessionCommand;
 import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ReloadCommand;
 import kendo.me.kproffesionscore.crafts.CraftManager;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
-import kendo.me.kproffesionscore.manager.config.ConfigUtils;
+import kendo.me.kproffesionscore.utils.ChatUtils;
+import kendo.me.kproffesionscore.utils.ConfigUtils;
+import kendo.me.kproffesionscore.manager.config.CooldownsManager;
 import kendo.me.kproffesionscore.professions.database.connection.ProfissionDatabase;
+import kendo.me.kproffesionscore.utils.skript.SkriptUtils;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
 
@@ -22,13 +31,14 @@ public final class KProfessionsCore extends JavaPlugin {
     private static ConfigManager config;
     private static CraftManager craftManager;
     private static EntityManager entityManager;
+    private ConfigUtils configUtils = new ConfigUtils();
+    private static CooldownsManager cooldownsManager = new CooldownsManager();
     @Override
     public void onEnable() {
         Bukkit.getLogger().severe("Initialized!");
 
         entityManager = new EntityManager();
-        // Roda a cada 1 tick (0.05 segundos)
-        entityManager.runTaskTimer(this, 0L, 1L);
+      //  entityManager.runTaskTimer(this, 0L, 1L);
         saveDefaultConfig();
         config = new ConfigManager(this);
         try {
@@ -38,11 +48,23 @@ public final class KProfessionsCore extends JavaPlugin {
             throw new RuntimeException(e);
         }
         craftManager = new CraftManager(this, config);
-        menuHandler = new MenuHandler(getInstance(), new ConfigUtils());
+        menuHandler = new MenuHandler(getInstance(), configUtils);
         registerCommands();
         registerEvents();
         dbManager = new ProfissionDatabase(getDataFolder());
         craftManager.loadAll();
+        new BukkitRunnable() { // depois remover, apenas pra debugs
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
+                    double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
+                    String subtitle = ChatUtils.color("&c&lHP: &f" + (int)currentHp + "&7/&f" + (int)maxHp);
+
+                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatUtils.color(subtitle)));
+                }
+            }
+        }.runTaskTimer(this, 0L, 5L);
     }
 
 
@@ -51,6 +73,7 @@ public final class KProfessionsCore extends JavaPlugin {
         Bukkit.getLogger().severe("Disabled!");
         menuHandler.clear();
         entityManager.removeAllEntities();
+        cooldownsManager.cleanExpired();
     }
 
     public static JavaPlugin getInstance(){
@@ -72,13 +95,21 @@ public final class KProfessionsCore extends JavaPlugin {
         return  entityManager;
     }
 
+    public static CooldownsManager getCooldownsManager(){
+        return cooldownsManager;
+    }
+
+
     private void registerCommands(){
         new ProfessionCommand(this, menuHandler);
         new ReloadCommand(this, config);
     }
 
     private void registerEvents(){
-        new SeringeEvent(this);
+        new GreenSeringeEvent(this);
+        new RedSeringeEvent(this);
+        new MedicKitEvent(this);
+        new ThrowableMedicKit(this);
     }
 
 
@@ -89,9 +120,9 @@ public final class KProfessionsCore extends JavaPlugin {
 // Core:
 // todo: adicionar o resto dos Dao - pensar na questao de level up, pensar na config de profissao (sem craft)
 // Crafts
-// todo: deixar seringas configuraveis na config de medico.yml (fora do path crafs)
 // TODO:
-//  - comando pra remover craft
-//  - Conquistas crafts
-//  - adicionar raridade de crafts - adicioar cap de craft q ser feito dependendo do lvl
+//  - comando pra remover craft - sem prioridade
+//  - Conquistas crafts - final
+//  - bandagem pro medico, precisa de modelo (mesma base logica do medickit)
 //
+// Comecar combatente.
