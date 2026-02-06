@@ -1,9 +1,6 @@
 package kendo.me.kproffesionscore;
-
-import kendo.me.kproffesionscore.entities.events.GreenSeringeEvent;
-import kendo.me.kproffesionscore.entities.events.ThrowableMedicKit;
-import kendo.me.kproffesionscore.entities.events.MedicKitEvent;
-import kendo.me.kproffesionscore.entities.events.RedSeringeEvent;
+import kendo.me.kproffesionscore.entities.events.combatente.SwordAttackTest;
+import kendo.me.kproffesionscore.entities.events.medic.*;
 import kendo.me.kproffesionscore.entities.manager.EntityManager;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
 import kendo.me.kproffesionscore.commands.profession.ProfessionCommand;
@@ -23,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
+import java.util.List;
 
 public final class KProfessionsCore extends JavaPlugin {
 
@@ -38,7 +36,7 @@ public final class KProfessionsCore extends JavaPlugin {
         Bukkit.getLogger().severe("Initialized!");
 
         entityManager = new EntityManager();
-      //  entityManager.runTaskTimer(this, 0L, 1L);
+      entityManager.runTaskTimer(this, 0L, 1L);
         saveDefaultConfig();
         config = new ConfigManager(this);
         try {
@@ -110,6 +108,8 @@ public final class KProfessionsCore extends JavaPlugin {
         new RedSeringeEvent(this);
         new MedicKitEvent(this);
         new ThrowableMedicKit(this);
+        new SwordAttackTest(this);
+        new BandageConsumeEvent(this);
     }
 
 
@@ -119,10 +119,10 @@ public final class KProfessionsCore extends JavaPlugin {
 ///
 // Core:
 // todo: adicionar o resto dos Dao - pensar na questao de level up, pensar na config de profissao (sem craft)
-// Crafts
+//
 // TODO:
+//  - Iniciar combatente
+//  - arrumar a skill primaria de espada
 //  - comando pra remover craft - sem prioridade
 //  - Conquistas crafts - final
-//  - bandagem pro medico, precisa de modelo (mesma base logica do medickit)
 //
-// Comecar combatente.

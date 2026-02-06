@@ -36,8 +36,11 @@ public class CustomHitBox {
     }
 
     public void draw(Location entityLoc, List<Player> viewers, boolean followHead) {
-        if (viewers == null || viewers.isEmpty()) return;
-
+        if (viewers == null || viewers.isEmpty()) {
+            System.out.println(viewers);
+            System.out.println("vazio?");
+            return;
+        }
         double hw = width / 2;
         double offset = getVerticalOffset(followHead);
 

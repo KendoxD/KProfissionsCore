@@ -1,4 +1,4 @@
-package kendo.me.kproffesionscore.entities.events;
+package kendo.me.kproffesionscore.entities.events.medic;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.builder.entities.CustomEntity;
@@ -64,7 +64,7 @@ public class ThrowableMedicKit implements Listener {
             if (cooldownsManager.isCooldown(player.getUniqueId(), skillKey)) {
                 double remaining = cooldownsManager.getRemaining(player.getUniqueId(), skillKey);
                 String progressBar = cooldownsManager.getProgressBar(remaining, cooldownTime, 20, "|", "&a", "&7");
-                String message = ChatUtils.color("&2&lESTAÇÃO &7[" + progressBar + "&7] &e" + String.format("%.1f", remaining) + "s");
+                String message = ChatUtils.color("&2&lCooldown &7[" + progressBar + "&7] &e" + String.format("%.1f", remaining) + "s");
 
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
                 return;
@@ -109,6 +109,7 @@ public class ThrowableMedicKit implements Listener {
                 .collect(Collectors.toList());
 
         stationEntity.spawn(nearby);
+        KProfessionsCore.getEntityManager().addEntity(stationEntity);
 
         int durationSeconds = config.getInt("skills." + skillKey + ".effect-time", 10);
         double range = config.getDouble("skills." + skillKey + ".range", 5.0);
@@ -123,6 +124,7 @@ public class ThrowableMedicKit implements Listener {
             public void run() {
                 if (ticks >= totalTicks) {
                     stationEntity.remove();
+                    KProfessionsCore.getEntityManager().removeEntity(stationEntity);
                     this.cancel();
                     return;
                 }

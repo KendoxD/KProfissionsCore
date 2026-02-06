@@ -1,5 +1,4 @@
-package kendo.me.kproffesionscore.entities.events;
-
+package kendo.me.kproffesionscore.entities.events.medic;
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
 import kendo.me.kproffesionscore.utils.ChatUtils;
@@ -98,11 +97,11 @@ public class MedicKitEvent implements Listener {
                     return;
                 }
 
-                if (player.getLocation().distanceSquared(startLoc) > 0.25) {
-                    player.sendTitle(ChatUtils.color("&c&lCancelando,,"), ChatUtils.color("&7Não se mova!"), 0, 20, 10);
-                    this.cancel();
-                    return;
-                }
+//                if (player.getLocation().distanceSquared(startLoc) > 0.25) {
+//                    player.sendTitle(ChatUtils.color("&c&lCancelando,,"), ChatUtils.color("&7Não se mova!"), 0, 20, 10);
+//                    this.cancel();
+//                    return;
+//                }
 
                 double angle = ticks * 0.15;
                 double x = Math.cos(angle) * 0.8;

@@ -132,7 +132,46 @@ public class CustomEntity {
         sendPacket(this.viewers, packet);
     }
 
-    public void drawHitbox() { if (debugMode) hitBox.draw(currentLocation, viewers, false); }
+    public void updateRotation(int index, float x, float y, float z) {
+        if (viewers.isEmpty()) return;
+
+        ProtocolManager pm = ProtocolLibrary.getProtocolManager();
+        PacketContainer metaPacket = pm.createPacket(PacketType.Play.Server.ENTITY_METADATA);
+        metaPacket.getIntegers().write(0, entityId);
+
+        Vector3F angle = new Vector3F(x, y, z);
+
+        WrappedDataWatcher watcher = new WrappedDataWatcher();
+        WrappedDataWatcher.Serializer serializer = WrappedDataWatcher.Registry.getVectorSerializer();
+
+        watcher.setObject(new WrappedDataWatcher.WrappedDataWatcherObject(index, serializer), angle);
+
+        metaPacket.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
+
+        sendPacket(this.viewers, metaPacket);
+    }
+
+    public void updateModel(ItemStack item) {
+        this.settings.setModel(item);
+        PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
+        packet.getIntegers().write(0, this.entityId);
+        List<Pair<EnumWrappers.ItemSlot, ItemStack>> pairList = new ArrayList<>();
+        pairList.add(new Pair<>(EnumWrappers.ItemSlot.HEAD, item));
+        packet.getSlotStackPairLists().write(0, pairList);
+        for (org.bukkit.entity.Player viewer : this.viewers) {
+            if (viewer.isOnline()) {
+                try {
+                    ProtocolLibrary.getProtocolManager().sendServerPacket(viewer, packet);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    public void drawHitbox() {
+        if (debugMode) {
+        hitBox.draw(currentLocation, getViewers(), false);
+    } }
     public boolean isInside(Location pt) { return hitBox.isInside(currentLocation, pt, false); }
     public Location getEntityLocation() { return currentLocation; }
 }

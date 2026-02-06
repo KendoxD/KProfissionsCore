@@ -89,7 +89,7 @@ public class ProfessionCommand extends CommandBuilder {
                         case "medico" -> new GiveMedicItem(plugin).execute(player, args);
                         case "reload" -> new ReloadCommand(plugin, KProfessionsCore.getConfigManager()).execute(player, args);
                         case "craft" -> new CraftCommand(plugin).execute(player, args);
-                        default -> player.sendMessage(ChatUtils.color("&Subcomando admin inválido: " + subCommand));
+                        default -> player.sendMessage(ChatUtils.color("&cSubcomando admin inválido: " + subCommand));
                     }
                 })).register();
     }

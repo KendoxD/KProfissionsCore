@@ -1,7 +1,6 @@
 package kendo.me.kproffesionscore.entities.manager;
 
 import kendo.me.kproffesionscore.builder.entities.CustomEntity;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -39,6 +38,6 @@ public class EntityManager extends BukkitRunnable {
 //                    p.sendTitle("", ChatUtils.color("&c&lDENTRO DA HITBOX"), 0, 5, 0);
 //                }
 //            }
-//        }w
+//        }
     }
 }

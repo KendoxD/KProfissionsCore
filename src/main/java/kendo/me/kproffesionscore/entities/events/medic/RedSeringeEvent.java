@@ -1,4 +1,4 @@
-package kendo.me.kproffesionscore.entities.events;
+package kendo.me.kproffesionscore.entities.events.medic;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
