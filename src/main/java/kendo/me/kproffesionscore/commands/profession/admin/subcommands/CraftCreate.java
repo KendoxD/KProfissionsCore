@@ -22,8 +22,9 @@ public class CraftCreate extends CommandBuilder implements CommandAction {
 
     @Override
     public void execute(Player player, @Nullable String[] args) {
-        if (args == null || args.length < 6) {
-            player.sendMessage(ChatUtils.color("&cUse: /profissoes admin craft create <profissao> <nomeCraft> <nivelRequired>"));
+        // Aumentamos para 7 argumentos: admin craft create <profissao> <nomeCraft> <nivel> <exp>
+        if (args == null || args.length < 7) {
+            player.sendMessage(ChatUtils.color("&cUse: /profissoes admin craft create <profissao> <nomeCraft> <nivelRequired> <expGain>"));
             return;
         }
 
@@ -34,11 +35,15 @@ public class CraftCreate extends CommandBuilder implements CommandAction {
         String action = args[2].toLowerCase();
         String profissao = args[3].toLowerCase();
         String craftName = args[4];
+
         int requiredLevel;
+        double expGain;
+
         try {
             requiredLevel = Integer.parseInt(args[5]);
+            expGain = Double.parseDouble(args[6]);
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatUtils.color("&cO nível deve ser um número inteiro!"));
+            player.sendMessage(ChatUtils.color("&cO nível deve ser inteiro e o XP deve ser um número (ex: 10.5)!"));
             return;
         }
 
@@ -73,11 +78,14 @@ public class CraftCreate extends CommandBuilder implements CommandAction {
                 // Salvando na config
                 config.set("Craft." + craftName + ".result.item", player.getInventory().getItemInMainHand());
                 config.set("Craft." + craftName + ".level-required", requiredLevel);
+                config.set("Craft." + craftName + ".exp-gain", expGain); // ADICIONADO
                 config.createSection("Craft." + craftName + ".ingredients");
 
                 configManager.saveYaml(config, ConfigPaths.CRAFTS.getPath(), profissao + ".yml");
 
-                player.sendMessage(ChatUtils.color("&aCraft '&f" + craftName + "&a' criado! Nível requerido: &e" + requiredLevel));
+                player.sendMessage(ChatUtils.color("&aCraft '&f" + craftName + "&a' criado!"));
+                player.sendMessage(ChatUtils.color("&7Nível: &e" + requiredLevel + " &8| &7XP: &a" + expGain));
+
                 craftManager.loadAll();
             }
             default -> player.sendMessage(ChatUtils.color("&cAção inválida: " + action));

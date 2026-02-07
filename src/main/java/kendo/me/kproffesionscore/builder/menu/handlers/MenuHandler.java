@@ -88,19 +88,16 @@ public class MenuHandler implements Listener {
         int rawSlot = e.getRawSlot();
         if (rawSlot >= menu.getInventory().getSize()) return;
 
-        // Extrai a profissão do Type: MENU_MEDICO -> medico
         String profession = menu.getType().name().toLowerCase().replace("menu_", "");
 
         if (rawSlot < menu.getInventory().getSize()) {
             e.setCancelled(true);
 
-            // Slot 24 definido como o botão para finalizar o craft (exceto no menu de escolha)
             if (rawSlot == 24 && !menu.getType().equals(MenuType.MENU_CHOOSE)) {
                 handleCraftFinalize((Player) e.getWhoClicked(), menu, profession);
                 return;
             }
 
-            // Se for o menu de escolha, usa o callback padrão
             if(menu.getType().equals(MenuType.MENU_CHOOSE)){
                 menu.handleMenuClick(rawSlot);
             } else {
@@ -281,7 +278,7 @@ public class MenuHandler implements Listener {
         var db = KProfessionsCore.getDatabase();
         int playerLevel = db.getPlayerLevel(player.getDisplayName(), profession);
         int craftLevel = match.getLevelRequired();
-        double baseExp = 20.0 + (craftLevel * 5.0);
+        double baseExp = match.getExpGain();
         double expGain = config.calculateDynamicExp(baseExp, playerLevel, craftLevel);
 
         if (profession.equalsIgnoreCase("medico")) {
@@ -294,6 +291,5 @@ public class MenuHandler implements Listener {
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2f);
             }
         }
-        // Adicionar elses para cozinheiro/combatente conforme criar os DAOs
     }
 }

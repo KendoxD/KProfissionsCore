@@ -8,14 +8,16 @@ public class CraftLoader {
     private final String profession;
     private final Map<Integer, ItemStack> ingredients;
     private final ItemStack craftResult;
-    private final int levelRequired; // Novo campo
+    private final int levelRequired;
+    private final double expGain;
 
-    public CraftLoader(String recipeName, String profession, Map<Integer, ItemStack> ingredients, ItemStack craftResult, int levelRequired){
+    public CraftLoader(String recipeName, String profession, Map<Integer, ItemStack> ingredients, ItemStack craftResult, int levelRequired, double expGain){
         this.recipeName = recipeName;
         this.profession = profession;
         this.ingredients = ingredients;
         this.craftResult = craftResult;
         this.levelRequired = levelRequired;
+        this.expGain = expGain;
     }
 
     public String getRecipeName() {
@@ -24,10 +26,6 @@ public class CraftLoader {
 
     public String getProfession() {
         return profession;
-    }
-
-    public ItemStack getCraftResult() {
-        return craftResult;
     }
 
     public Map<Integer, ItemStack> getIngredients() {
@@ -40,5 +38,9 @@ public class CraftLoader {
 
     public int getLevelRequired() {
         return levelRequired;
+    }
+
+    public double getExpGain() {
+        return expGain;
     }
 }

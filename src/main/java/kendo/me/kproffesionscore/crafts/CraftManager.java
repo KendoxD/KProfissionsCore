@@ -36,6 +36,7 @@ public class CraftManager {
         for (ConfigFiles value : ConfigFiles.values()) {
             String profissionName = value.name().toLowerCase();
             YamlConfiguration config = configManager.getCraftFile(ConfigPaths.CRAFTS, value);
+
             if(config == null){
                 System.out.println("Error loading config for profession: " + profissionName);
                 continue;
@@ -43,21 +44,26 @@ public class CraftManager {
             if(!config.contains("Craft")) continue;
 
             List<CraftLoader> craftList = new ArrayList<>();
-            for (String craftKey : config.getConfigurationSection("Craft").getKeys(false)) {
-                String path = "Craft." + craftKey;
+            if (config.getConfigurationSection("Craft") != null) {
+                for (String craftKey : config.getConfigurationSection("Craft").getKeys(false)) {
+                    String path = "Craft." + craftKey;
 
-                ItemStack resultItem = config.getItemStack(path + ".result.item");
-                int levelRequired = config.getInt(path + ".level-required");
+                    ItemStack resultItem = config.getItemStack(path + ".result.item");
+                    int levelRequired = config.getInt(path + ".level-required");
 
-                Map<Integer, ItemStack> ingredients = new HashMap<>();
-                if(config.contains(path + ".ingredients")){
-                    for (String slotKey : config.getConfigurationSection(path + ".ingredients").getKeys(false)) {
-                        int slot = Integer.parseInt(slotKey);
-                        ItemStack item = config.getItemStack(path + ".ingredients." + slotKey + ".item");
-                        ingredients.put(slot, item);
+                    double expGain = config.getDouble(path + ".exp-gain", 10.0);
+
+                    Map<Integer, ItemStack> ingredients = new HashMap<>();
+                    if(config.contains(path + ".ingredients") && config.getConfigurationSection(path + ".ingredients") != null){
+                        for (String slotKey : config.getConfigurationSection(path + ".ingredients").getKeys(false)) {
+                            int slot = Integer.parseInt(slotKey);
+                            ItemStack item = config.getItemStack(path + ".ingredients." + slotKey + ".item");
+                            ingredients.put(slot, item);
+                        }
                     }
+
+                    craftList.add(new CraftLoader(craftKey, profissionName, ingredients, resultItem, levelRequired, expGain));
                 }
-                craftList.add(new CraftLoader(craftKey, profissionName, ingredients, resultItem, levelRequired));
             }
             recipesByProfession.put(profissionName, craftList);
         }
@@ -111,7 +117,7 @@ public class CraftManager {
                 String resultName = (craft.getResult() != null) ? craft.getResult().getType().name() : "ERRO-RESULTADO";
 
                 System.out.println(ChatUtils.color(" &8- &f" + craft.getRecipeName() +
-                        " &7[Nível " + craft.getLevelRequired() + "] &7(" + ingredSize + " ingredientes) -> &a" + resultName));
+                        " &7[Nível " + craft.getLevelRequired() + "] [XP " + craft.getExpGain() + "] &7(" + ingredSize + " ingredientes) -> &a" + resultName));
 
                 craft.getIngredients().forEach((slot, item) -> {
                     String name = (item != null) ? item.getType().name() : "NULO";
