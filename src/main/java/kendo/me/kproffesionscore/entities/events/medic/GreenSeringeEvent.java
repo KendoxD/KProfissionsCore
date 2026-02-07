@@ -5,6 +5,8 @@ import kendo.me.kproffesionscore.builder.entities.CustomEntity;
 import kendo.me.kproffesionscore.builder.entities.EntityBuilder;
 import kendo.me.kproffesionscore.builder.entities.ProjectileBuilder;
 import kendo.me.kproffesionscore.entities.GreenSeringeProjectil;
+import kendo.me.kproffesionscore.professions.Medico;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
@@ -12,6 +14,7 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,11 +29,11 @@ import org.bukkit.util.Vector;
 import java.util.Random;
 
 public class GreenSeringeEvent implements Listener {
-    //TODO: Javadocs this shit
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "seringa-verde";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
+    private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public GreenSeringeEvent(JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -48,17 +51,26 @@ public class GreenSeringeEvent implements Listener {
         String materialName = config.getString("skills." + skillKey + ".item", "PAPER").replace("minecraft:", "").toUpperCase();
         Material targetMaterial = Material.getMaterial(materialName);
         int modelData = config.getInt("skills." + skillKey + ".model-data");
-
         String targetName = ChatUtils.color(config.getString("skills." + skillKey + ".item-name"));
 
         ItemMeta meta = item.getItemMeta();
 
         if (item.getType() != targetMaterial) return;
         if (!meta.hasCustomModelData() || meta.getCustomModelData() != modelData) return;
-
         if (!meta.getDisplayName().equals(targetName)) return;
 
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+
+            int requiredLevel = config.getInt("skills." + skillKey + ".level-required");
+            Medico medicoData = medicoDao.load(player.getName());
+            int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
+
+            if (playerLevel < requiredLevel) {
+                player.sendMessage(ChatUtils.color("&c&l(!) &7Seu nível de Médico (&e" + playerLevel + "&7) é insuficiente. Requer nível &6" + requiredLevel));
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                event.setCancelled(true);
+                return;
+            }
 
             int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 10);
 
@@ -73,8 +85,14 @@ public class GreenSeringeEvent implements Listener {
             }
 
             disparar(player, item);
-            cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
+            if (medicoData != null) {
+                double expToGain = config.getDouble("skills." + skillKey + ".exp-gain");
+                medicoData.addExp(expToGain);
+                medicoDao.save(medicoData);
+                player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+            }
 
+            cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatUtils.color("&a&l✔ SERINGA LANÇADA!")));
 
             if (item.getAmount() > 1) {

@@ -1,6 +1,9 @@
 package kendo.me.kproffesionscore.commands.profession.admin.subcommands;
+import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.commands.builder.CommandBuilder;
 import kendo.me.kproffesionscore.manager.config.ConfigManager;
+import kendo.me.kproffesionscore.utils.ChatUtils;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
@@ -15,6 +18,10 @@ public class ReloadCommand extends CommandBuilder {
                 .setAliases("kjobs", "profission");
     }
     public void execute(Player player, @Nullable String[] args) {
+        if(!player.hasPermission("kprofessions.admin.reload")) {
+            player.sendMessage(ChatUtils.color("&cVocê não tem permissão para realizar esta ação."));
+            return;
+        }
         if (args.length == 0) {
             player.sendMessage("§cUse /profissoes admin reload");
             return;
@@ -25,8 +32,12 @@ public class ReloadCommand extends CommandBuilder {
         }
         String secondArg = args[1].toLowerCase();
         if (secondArg.equals("reload")) {
+            configManager.reloadAll();
             configManager.reloadAllCraftFiles();
-            player.sendMessage("§aCrafts recarregados com sucesso!");
+            KProfessionsCore.getCraftManager().loadAll();
+            player.sendMessage(ChatUtils.color("&a&l[!] &aConfigurações e receitas de craft recarregadas!"));
+            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f);
+            player.sendMessage(ChatUtils.color("§aCrafts recarregados com sucesso!"));
             return;
         }
 

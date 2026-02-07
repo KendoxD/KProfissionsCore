@@ -1,5 +1,7 @@
 package kendo.me.kproffesionscore.professions.database.connection;
 
+import kendo.me.kproffesionscore.professions.Medico;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import org.bukkit.Bukkit;
 
 import java.io.File;
@@ -31,41 +33,9 @@ public class ProfissionDatabase {
 
     public void createTables() {
         try (Statement stmt = connection.createStatement()) {
-
-            stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS combatente (
-                        nick TEXT PRIMARY KEY,
-                        professionLevel INTEGER,
-                        professionXp REAL,
-                        mastery REAL,
-                        forgeLevel INTEGER,
-                        masterySword REAL
-                    );
-                    """);
-
-            stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS medico (
-                        nick TEXT PRIMARY KEY,
-                        professionLevel INTEGER,
-                        professionXp REAL,
-                        mastery REAL,
-                        healLevel INTEGER,
-                        medicinePower INTEGER,
-                        medicalMastery INTEGER
-                    );
-                    """);
-
-            stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS cozinheiro (
-                        nick TEXT PRIMARY KEY,
-                        professionLevel INTEGER,
-                        professionXp REAL,
-                        mastery REAL,
-                        healLevel INTEGER,
-                        medicinePower INTEGER
-                    );
-                    """);
-
+            stmt.execute("CREATE TABLE IF NOT EXISTS combatente (nick TEXT PRIMARY KEY, professionLevel INTEGER, professionXp REAL, mastery REAL, forgeLevel INTEGER, masterySword REAL);");
+            stmt.execute("CREATE TABLE IF NOT EXISTS medico (nick TEXT PRIMARY KEY, professionLevel INTEGER, professionXp REAL, mastery REAL, healLevel INTEGER, medicinePower INTEGER, medicalMastery INTEGER);");
+            stmt.execute("CREATE TABLE IF NOT EXISTS cozinheiro (nick TEXT PRIMARY KEY, professionLevel INTEGER, professionXp REAL, mastery REAL, healLevel INTEGER, medicinePower INTEGER);");
         } catch (SQLException e) {
             Bukkit.getLogger().severe("[KProfessionsCore] Erro ao criar tabelas SQLite: " + e.getMessage());
         }
@@ -75,65 +45,51 @@ public class ProfissionDatabase {
         return connection;
     }
 
-    public void closeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-                Bukkit.getLogger().info("[KProfessionsCore] Conexão SQLite encerrada.");
-            }
-        } catch (SQLException e) {
-            Bukkit.getLogger().severe("[KProfessionsCore] Erro ao fechar SQLite: " + e.getMessage());
+    /**
+     * Busca o nível do jogador dinamicamente por profissão
+     */
+    public int getPlayerLevel(String nick, String profession) {
+        if (profession == null) return 0;
+
+        if (profession.equalsIgnoreCase("medico")) {
+            MedicoDao medicoDao = new MedicoDao(connection);
+            Medico m = medicoDao.load(nick);
+            return (m != null) ? m.getProfissionLevel() : 0;
         }
+
+        String sql = "SELECT professionLevel FROM " + profession.toLowerCase() + " WHERE nick = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, nick);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("professionLevel");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
     }
 
-
-    /**
-     * Verifica se o nick do jogador existe em alguma tabela de profissões.
-     *
-     * @param nick Nick do jogador
-     * @return true se existir em alguma tabela, false caso contrário
-     */
     public boolean playerExists(String nick) {
         String[] tables = {"combatente", "medico", "cozinheiro"};
-
         for (String table : tables) {
             String sql = "SELECT 1 FROM " + table + " WHERE nick = ? LIMIT 1";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, nick);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    return true; // achou o nick em alguma tabela
-                }
-            } catch (SQLException e) {
-                Bukkit.getLogger().severe("[KProfessionsCore] Erro ao verificar nick em " + table + ": " + e.getMessage());
-            }
+                if (ps.executeQuery().next()) return true;
+            } catch (SQLException ignored) {}
         }
-
         return false;
     }
 
-    /**
-     * Retorna a profissão do jogador com base no nick.
-     *
-     * @param nick Nick do jogador
-     * @return "combatente", "medico", "cozinheiro" ou null se não tiver profissão
-     */
     public String getPlayerProfession(String nick) {
         String[] tables = {"combatente", "medico", "cozinheiro"};
-
         for (String table : tables) {
             String sql = "SELECT 1 FROM " + table + " WHERE nick = ? LIMIT 1";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, nick);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    return table; // retorna o nome da tabela/profissão
-                }
-            } catch (SQLException e) {
-                Bukkit.getLogger().severe("[KProfessionsCore] Erro ao verificar profissão em " + table + ": " + e.getMessage());
-            }
+                if (ps.executeQuery().next()) return table;
+            } catch (SQLException ignored) {}
         }
-
-        return null; // jogador não possui profissão
+        return null;
     }
 }

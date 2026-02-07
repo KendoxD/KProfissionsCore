@@ -1,6 +1,5 @@
 package kendo.me.kproffesionscore.professions;
 
-import org.bukkit.entity.Player;
 
 public abstract class PlayerProfession {
     private String nick;

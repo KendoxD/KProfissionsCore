@@ -5,7 +5,8 @@ import kendo.me.kproffesionscore.builder.menu.Menu;
 import kendo.me.kproffesionscore.builder.menu.enums.MenuType;
 import kendo.me.kproffesionscore.crafts.CraftLoader;
 import kendo.me.kproffesionscore.crafts.CraftManager;
-import kendo.me.kproffesionscore.crafts.ProfessionCraftItemLimit;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
+import kendo.me.kproffesionscore.utils.ChatUtils;
 import kendo.me.kproffesionscore.utils.ConfigUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -81,21 +82,34 @@ public class MenuHandler implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e){
         Menu menu = getMenuByInventory(e);
-        int rawSlot = e.getRawSlot();
         if(menu == null) return;
+
+        int rawSlot = e.getRawSlot();
+        if (rawSlot >= menu.getInventory().getSize()) return;
+
+        // Extrai a profissão do Type: MENU_MEDICO -> medico
+        String profession = menu.getType().name().toLowerCase().replace("menu_", "");
+
         if (rawSlot < menu.getInventory().getSize()) {
             e.setCancelled(true);
 
-            // Slot 24 definido como o botão para finalizar o craft
-            if (rawSlot == 24 && menu.getType().equals(MenuType.MENU_MEDICO)) {
-                handleCraftFinalize((Player) e.getWhoClicked(), menu, "medico");
+            // Slot 24 definido como o botão para finalizar o craft (exceto no menu de escolha)
+            if (rawSlot == 24 && !menu.getType().equals(MenuType.MENU_CHOOSE)) {
+                handleCraftFinalize((Player) e.getWhoClicked(), menu, profession);
                 return;
             }
 
-            if(menu.getType().equals(MenuType.MENU_MEDICO)){
-                onMedicMenu(e, menu);
-            } else {
+            // Se for o menu de escolha, usa o callback padrão
+            if(menu.getType().equals(MenuType.MENU_CHOOSE)){
                 menu.handleMenuClick(rawSlot);
+            } else {
+                int[] validSlots = menu.getType().getSlots();
+                for (int validSlot : validSlots) {
+                    if(rawSlot == validSlot){
+                        onProfessionMenu(e, menu, profession);
+                        return;
+                    }
+                }
             }
         }
     }
@@ -104,41 +118,48 @@ public class MenuHandler implements Listener {
     public void onClose(InventoryCloseEvent e){
         Menu menu = getMenuByInventory(e);
         if(menu != null){
-            for (int slot : ProfessionCraftItemLimit.MEDICO.getSlots()) {
-                ItemStack item = menu.getInventory().getItem(slot);
-                if(item != null && item.getType() != Material.AIR && item.getType() != Material.PAPER){
-                    menu.getPlayer().getInventory().addItem(item);
+            if(!menu.getType().equals(MenuType.MENU_CHOOSE)) {
+                int[] craftSlots = menu.getType().getSlots();
+
+                for (int slot : craftSlots) {
+                    if (slot == 24) continue;
+                    ItemStack item = menu.getInventory().getItem(slot);
+                    if(item != null && item.getType() != Material.AIR){
+                        if (item.hasItemMeta() && item.getItemMeta().hasCustomModelData()) {
+                            if (item.getItemMeta().getCustomModelData() == 30000) continue;
+                        }
+                        if (item.getType() == Material.BARRIER) continue;
+                        menu.getPlayer().getInventory().addItem(item);
+                    }
                 }
             }
+
             mapCraft.clear();
             menu.handleClose();
             removeMenuFromHandler(menu);
         }
     }
-    private void onMedicMenu(InventoryClickEvent e, Menu menu){
+
+    private void onProfessionMenu(InventoryClickEvent e, Menu menu, String profession){
         ItemStack item = e.getWhoClicked().getItemOnCursor();
         int slot = e.getRawSlot();
         Player player = menu.getPlayer();
-        int[] validSlots = ProfessionCraftItemLimit.MEDICO.getSlots();
-        for (int validSlot : validSlots) {
-            if(slot == validSlot){
-                if (item.getType() == Material.AIR) {
-                    Bukkit.getScheduler().runTask(KProfessionsCore.getInstance(), () -> {
-                        ItemStack currentInSlot = menu.getInventory().getItem(slot);
-                        if (currentInSlot == null || currentInSlot.getType() == Material.AIR) {
-                            mapCraft.remove(slot);
-                        } else {
-                            mapCraft.put(slot, currentInSlot);
-                        }
-                        updatePreview(menu, "medico");
-                    });
-                    e.setCancelled(false);
-                    return;
+
+        if (item.getType() == Material.AIR) {
+            Bukkit.getScheduler().runTask(KProfessionsCore.getInstance(), () -> {
+                ItemStack currentInSlot = menu.getInventory().getItem(slot);
+                if (currentInSlot == null || currentInSlot.getType() == Material.AIR) {
+                    mapCraft.remove(slot);
+                } else {
+                    mapCraft.put(slot, currentInSlot);
                 }
-                addItemToSlot(e, player, menu.getInventory(), validSlot, item);
-                updatePreview(menu, "medico");
-            }
+                updatePreview(menu, profession);
+            });
+            e.setCancelled(false);
+            return;
         }
+        addItemToSlot(e, player, menu.getInventory(), slot, item);
+        updatePreview(menu, profession);
     }
 
     /**
@@ -149,26 +170,20 @@ public class MenuHandler implements Listener {
      * @param item
      */
     private void addItemToSlot(InventoryClickEvent e, Player player, Inventory inv, int validSlot, ItemStack item){
-        ItemStack current = e.getInventory().getItem(e.getRawSlot());
+        ItemStack current = inv.getItem(validSlot);
         ItemStack itemToAdd = item.clone();
 
         if(e.getClick().isRightClick()){
             if(current == null || current.getType() == Material.AIR) {
                 itemToAdd.setAmount(1);
                 inv.setItem(validSlot, itemToAdd);
-            } else if(current.getType() == item.getType()){
+            } else if(current.isSimilar(item)){
                 current.setAmount(current.getAmount() + 1);
             }
             item.setAmount(item.getAmount() - 1);
-            if(item.getAmount() <= 0){
-                item.setAmount(0);
-            }
         } else if(e.getClick().isLeftClick()){
-            if(current == null || current.getType() == Material.AIR ) {
-                if(e.getCursor() == null) return;
-                inv.setItem(e.getRawSlot(), item.clone());
-                item.setAmount(0);
-            }
+            inv.setItem(validSlot, item.clone());
+            item.setAmount(0);
         }
 
         ItemStack finalItem = inv.getItem(validSlot);
@@ -181,7 +196,7 @@ public class MenuHandler implements Listener {
     }
 
     /**
-     * Atualiza o slot de item craftado dependendo do match
+     * Atualiza o slot de item craftado dependendo do match e do NÍVEL.
      * @param menu
      * @param profession
      */
@@ -191,7 +206,25 @@ public class MenuHandler implements Listener {
         CraftLoader match = craftManager.findMatch(profession, mapCraft);
 
         if (match != null) {
-            inv.setItem(24, match.getResult());
+            Player player = menu.getPlayer();
+            var db = KProfessionsCore.getDatabase();
+            int playerLevel = (db != null) ? db.getPlayerLevel(player.getDisplayName(), profession) : 0;
+
+            if (playerLevel < match.getLevelRequired()) {
+                ItemStack errorItem = new ItemStack(Material.BARRIER);
+                org.bukkit.inventory.meta.ItemMeta meta = errorItem.getItemMeta();
+                if (meta != null) {
+                    meta.setDisplayName("§c§lBloqueado!");
+                    meta.setLore(Arrays.asList(
+                            ChatUtils.color("&7Nível necessário: §e" + match.getLevelRequired()),
+                            ChatUtils.color("&7Seu nível: §c" + playerLevel)
+                    ));
+                    errorItem.setItemMeta(meta);
+                }
+                inv.setItem(24, errorItem);
+            } else {
+                inv.setItem(24, match.getResult());
+            }
         } else {
             inv.setItem(24, new ItemStack(Material.AIR));
         }
@@ -209,6 +242,14 @@ public class MenuHandler implements Listener {
 
         if (match == null) return;
 
+        int playerLevel = KProfessionsCore.getDatabase().getPlayerLevel(player.getDisplayName(), profession);
+
+        if (playerLevel < match.getLevelRequired()) {
+            player.sendMessage("§cVocê não possui nível de " + profession + " suficiente!");
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
+
         Inventory inv = menu.getInventory();
         match.getIngredients().forEach((slot, ingredient) -> {
             ItemStack itemInSlot = inv.getItem(slot);
@@ -223,8 +264,43 @@ public class MenuHandler implements Listener {
                 }
             }
         });
+
         player.getInventory().addItem(match.getResult());
-        player.playSound(player.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f); //
+        player.playSound(player.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f);
+
+        // --- APLICAÇÃO DE XP DINÂMICO ---
+        applyCraftExperience(player, match, profession);
+
         updatePreview(menu, profession);
+    }
+
+    /**
+     * Calcula e salva o XP do jogador baseado na dificuldade do craft.
+     */
+    private void applyCraftExperience(Player player, CraftLoader match, String profession) {
+        var db = KProfessionsCore.getDatabase();
+        int playerLevel = db.getPlayerLevel(player.getDisplayName(), profession);
+        int craftLevel = match.getLevelRequired();
+
+        // Fórmula: Base 20 XP + (Nível do Craft * 5)
+        double expGain = 20.0 + (craftLevel * 5.0);
+        int diff = playerLevel - craftLevel;
+
+        // Redução de XP se o player for muito level alto para o craft
+        if (diff >= 10) expGain *= 0.1; // 10% de XP se estiver 10 leveis acima
+        else if (diff >= 5) expGain *= 0.5; // 50% de XP se estiver 5 leveis acima
+
+        if (profession.equalsIgnoreCase("medico")) {
+            var dao = new MedicoDao(db.getConnection());
+            var medico = dao.load(player.getDisplayName());
+            if (medico != null) {
+                // Aqui você deve ter um método no Medico.java chamado addExp(double) que gerencia o level up
+                medico.addExp(expGain);
+                dao.save(medico);
+                player.sendMessage(ChatUtils.color("&a+" + String.format("%.1f", expGain) + " XP de Médico!"));
+                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2f);
+            }
+        }
+        // Adicionar elses para cozinheiro/combatente conforme criar os DAOs
     }
 }

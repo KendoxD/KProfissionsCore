@@ -2,6 +2,8 @@ package kendo.me.kproffesionscore.entities.events.medic;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
+import kendo.me.kproffesionscore.professions.Medico;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.utils.skript.SkriptUtils;
@@ -21,11 +23,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class RedSeringeEvent implements Listener {
-    //TODO: Javadocs this shit
+
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "seringa-cura";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
+    private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public RedSeringeEvent(JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -49,6 +52,17 @@ public class RedSeringeEvent implements Listener {
                 meta.getCustomModelData() != modelData || !meta.getDisplayName().equals(targetName)) return;
 
         if (player.isSneaking() && (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK)) {
+            int requiredLevel = config.getInt("skills." + skillKey + ".level-required");
+            Medico medicoData = medicoDao.load(player.getName());
+            int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
+
+            if (playerLevel < requiredLevel) {
+                player.sendMessage(ChatUtils.color("&c&l(!) &7Seu nível de Médico (&e" + playerLevel + "&7) é insuficiente. Requer nível &6" + requiredLevel));
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                event.setCancelled(true);
+                return;
+            }
+
             double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
             double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
 
@@ -58,7 +72,7 @@ public class RedSeringeEvent implements Listener {
                 return;
             }
 
-            int cooldownTime = config.getInt("skills." + skillKey + ".cooldown");
+            int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 20);
 
             if (cooldownsManager.isCooldown(player.getUniqueId(), skillKey)) {
                 double remaining = cooldownsManager.getRemaining(player.getUniqueId(), skillKey);
@@ -66,13 +80,21 @@ public class RedSeringeEvent implements Listener {
                 String message = ChatUtils.color("&4&lCURA &7[" + progressBar + "&7] &e" + String.format("%.1f", remaining) + "s");
 
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+                event.setCancelled(true);
                 return;
             }
 
             double percentHeal = config.getDouble("skills." + skillKey + ".percent-heal", 0.2);
             int effectTime = config.getInt("skills." + skillKey + ".effect-time", 5);
+            double expToGain = config.getDouble("skills." + skillKey + ".exp-gain", 8.5);
 
             startSkriptRegenTask(player, percentHeal, effectTime);
+
+            if (medicoData != null) {
+                medicoData.addExp(expToGain);
+                medicoDao.save(medicoData);
+                player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+            }
 
             player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 2.0f);
             player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BREWING_STAND_BREW, 1.0f, 0.5f);

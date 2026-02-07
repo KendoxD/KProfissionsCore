@@ -2,10 +2,11 @@ package kendo.me.kproffesionscore.entities.events.medic;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
+import kendo.me.kproffesionscore.professions.Medico;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.utils.skript.SkriptUtils;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -31,6 +32,7 @@ public class BandageConsumeEvent implements Listener {
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
     private final Set<UUID> usingBandage = new HashSet<>();
+    private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public BandageConsumeEvent(JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -44,7 +46,6 @@ public class BandageConsumeEvent implements Listener {
         if (item == null || !item.hasItemMeta()) return;
 
         Player player = event.getPlayer();
-
         String materialName = config.getString("skills." + skillKey + ".item", "PAPER").replace("minecraft:", "").toUpperCase();
         Material targetMaterial = Material.getMaterial(materialName);
         int targetModel = config.getInt("skills." + skillKey + ".model-data");
@@ -55,9 +56,18 @@ public class BandageConsumeEvent implements Listener {
                 meta.getCustomModelData() != targetModel || !meta.getDisplayName().equals(targetName)) return;
 
         if (!player.isSneaking() || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
-        if (usingBandage.contains(player.getUniqueId())) {
+
+        int requiredLevel = config.getInt("skills." + skillKey + ".level-required", 1);
+        Medico medicoData = medicoDao.load(player.getName());
+        int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
+
+        if (playerLevel < requiredLevel) {
+            player.sendMessage(ChatUtils.color("&c&l(!) &7Seu nível de Médico (&e" + playerLevel + "&7) é insuficiente. Requer nível &6" + requiredLevel));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
+
+        if (usingBandage.contains(player.getUniqueId())) return;
 
         double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
         double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
@@ -78,9 +88,10 @@ public class BandageConsumeEvent implements Listener {
     }
 
     private void useBandage(Player player, ItemStack item) {
-        int usageTime = config.getInt("skills." + skillKey + ".usage-time");
-        int cooldownTime = config.getInt("skills." + skillKey + ".cooldown");
-        double percentHeal = config.getDouble("skills." + skillKey + ".percent-heal");
+        int usageTime = config.getInt("skills." + skillKey + ".usage-time", 3);
+        int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 0);
+        double percentHeal = config.getDouble("skills." + skillKey + ".percent-heal", 0.15);
+        double expToGain = config.getDouble("skills." + skillKey + ".exp-gain", 2.0); // Padrão 2.0 se não houver na config
 
         final UUID uuid = player.getUniqueId();
         final ItemStack itemUsed = item.clone();
@@ -129,9 +140,15 @@ public class BandageConsumeEvent implements Listener {
                     double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
                     double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
 
-                    double healAmount = maxHp * percentHeal;
-                    double finalHp = Math.min(currentHp + healAmount, maxHp * 0.75);
+                    double finalHp = Math.min(currentHp + (maxHp * percentHeal), maxHp * 0.75);
                     SkriptUtils.setVariable(player, "hp", finalHp);
+
+                    Medico medico = medicoDao.load(player.getName());
+                    if (medico != null) {
+                        medico.addExp(expToGain);
+                        medicoDao.save(medico);
+                        player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+                    }
 
                     if (item.getAmount() > 1) {
                         item.setAmount(item.getAmount() - 1);
@@ -143,7 +160,6 @@ public class BandageConsumeEvent implements Listener {
                     player.getWorld().playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
 
                     cooldownsManager.setCooldown(uuid, skillKey, cooldownTime);
-
                     usingBandage.remove(uuid);
                     this.cancel();
                 }

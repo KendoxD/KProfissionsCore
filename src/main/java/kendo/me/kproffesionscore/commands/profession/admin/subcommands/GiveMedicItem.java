@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GiveMedicItem extends CommandBuilder implements CommandAction {
 
@@ -41,16 +42,28 @@ public class GiveMedicItem extends CommandBuilder implements CommandAction {
         YamlConfiguration config = configUtils.getConfigFile("medico");
 
         if (!config.contains("skills." + skillId)) {
-            Set<String> keys = config.getConfigurationSection("skills").getKeys(false);
-            player.sendMessage(ChatUtils.color("&cSkill não encontrada! Disponíveis: &e" + String.join(", ", keys)));
+            if (config.getConfigurationSection("skills") != null) {
+                Set<String> keys = config.getConfigurationSection("skills").getKeys(false);
+                player.sendMessage(ChatUtils.color("&cSkill não encontrada! Disponíveis: &e" + String.join(", ", keys)));
+            } else {
+                player.sendMessage(ChatUtils.color("&cErro: Nenhuma skill configurada em medico.yml"));
+            }
             return;
         }
 
         String path = "skills." + skillId + ".";
+
         String matStr = config.getString(path + "item", "PAPER").replace("minecraft:", "").toUpperCase();
         Material material = Material.getMaterial(matStr);
+        if (material == null) {
+            player.sendMessage(ChatUtils.color("&cErro: Material '" + matStr + "' inválido na config!"));
+            return;
+        }
+
         String displayName = ChatUtils.color(config.getString(path + "item-name", "&rItem Médico"));
         int modelData = config.getInt(path + "model-data", 0);
+
+        List<String> loreFromConfig = config.getStringList(path + "lore");
 
         int amount = 1;
         if (args.length >= 6) {
@@ -59,25 +72,32 @@ public class GiveMedicItem extends CommandBuilder implements CommandAction {
             } catch (NumberFormatException ignored) {}
         }
 
-        if (material == null) {
-            player.sendMessage(ChatUtils.color("&cErro: Material '" + matStr + "' inválido na config!"));
-            return;
-        }
         ItemStack item = new ItemStack(material, amount);
         ItemMeta meta = item.getItemMeta();
+
         if (meta != null) {
             meta.setDisplayName(displayName);
+
             if (modelData != 0) {
                 meta.setCustomModelData(modelData);
             }
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatUtils.color("&7Item de Profissão: &fMédico"));
-            meta.setLore(lore);
+
+            if (!loreFromConfig.isEmpty()) {
+                List<String> coloredLore = loreFromConfig.stream()
+                        .map(ChatUtils::color)
+                        .collect(Collectors.toList());
+                meta.setLore(coloredLore);
+            } else {
+                List<String> defaultLore = new ArrayList<>();
+                defaultLore.add(ChatUtils.color("&7Item de Profissão: &fMédico"));
+                meta.setLore(defaultLore);
+            }
 
             item.setItemMeta(meta);
         }
 
         target.getInventory().addItem(item);
+
         player.sendMessage(ChatUtils.color("&aVocê deu &e" + amount + "x " + displayName + " &apara &f" + target.getName()));
         target.sendMessage(ChatUtils.color("&aVocê recebeu &e" + amount + "x " + displayName));
     }

@@ -29,7 +29,7 @@ public class SwordAttackTest implements Listener {
 
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (item == null || item.getType() == Material.AIR) return;
+        if (item.getType() == Material.AIR) return;
 
         spawnSlashAnimation(player);
     }

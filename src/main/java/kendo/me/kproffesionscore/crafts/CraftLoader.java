@@ -1,7 +1,6 @@
 package kendo.me.kproffesionscore.crafts;
 
 import org.bukkit.inventory.ItemStack;
-
 import java.util.Map;
 
 public class CraftLoader {
@@ -9,13 +8,14 @@ public class CraftLoader {
     private final String profession;
     private final Map<Integer, ItemStack> ingredients;
     private final ItemStack craftResult;
+    private final int levelRequired; // Novo campo
 
-    public CraftLoader(String recipeName, String profession, Map<Integer, ItemStack> ingredients, ItemStack craftResult){
-        this.recipeName=recipeName;
+    public CraftLoader(String recipeName, String profession, Map<Integer, ItemStack> ingredients, ItemStack craftResult, int levelRequired){
+        this.recipeName = recipeName;
         this.profession = profession;
-
         this.ingredients = ingredients;
         this.craftResult = craftResult;
+        this.levelRequired = levelRequired;
     }
 
     public String getRecipeName() {
@@ -38,5 +38,7 @@ public class CraftLoader {
         return craftResult;
     }
 
-
+    public int getLevelRequired() {
+        return levelRequired;
+    }
 }

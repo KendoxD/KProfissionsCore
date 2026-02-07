@@ -1,4 +1,6 @@
 package kendo.me.kproffesionscore;
+
+import kendo.me.kproffesionscore.commands.profession.ProfessionPerfilCommand;
 import kendo.me.kproffesionscore.entities.events.combatente.SwordAttackTest;
 import kendo.me.kproffesionscore.entities.events.medic.*;
 import kendo.me.kproffesionscore.entities.manager.EntityManager;
@@ -20,7 +22,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
-import java.util.List;
 
 public final class KProfessionsCore extends JavaPlugin {
 
@@ -31,12 +32,11 @@ public final class KProfessionsCore extends JavaPlugin {
     private static EntityManager entityManager;
     private ConfigUtils configUtils = new ConfigUtils();
     private static CooldownsManager cooldownsManager = new CooldownsManager();
+
     @Override
     public void onEnable() {
         Bukkit.getLogger().severe("Initialized!");
 
-        entityManager = new EntityManager();
-      entityManager.runTaskTimer(this, 0L, 1L);
         saveDefaultConfig();
         config = new ConfigManager(this);
         try {
@@ -45,61 +45,50 @@ public final class KProfessionsCore extends JavaPlugin {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        dbManager = new ProfissionDatabase(getDataFolder());
+        entityManager = new EntityManager();
+        entityManager.runTaskTimer(this, 0L, 1L);
         craftManager = new CraftManager(this, config);
         menuHandler = new MenuHandler(getInstance(), configUtils);
+
         registerCommands();
         registerEvents();
-        dbManager = new ProfissionDatabase(getDataFolder());
+
         craftManager.loadAll();
-        new BukkitRunnable() { // depois remover, apenas pra debugs
+
+        // Debug HP ActionBar
+        new BukkitRunnable() {
             @Override
             public void run() {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
                     double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
                     String subtitle = ChatUtils.color("&c&lHP: &f" + (int)currentHp + "&7/&f" + (int)maxHp);
-
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatUtils.color(subtitle)));
                 }
             }
         }.runTaskTimer(this, 0L, 5L);
     }
 
-
     @Override
     public void onDisable() {
         Bukkit.getLogger().severe("Disabled!");
-        menuHandler.clear();
-        entityManager.removeAllEntities();
+        if (menuHandler != null) menuHandler.clear();
+        if (entityManager != null) entityManager.removeAllEntities();
         cooldownsManager.cleanExpired();
     }
 
-    public static JavaPlugin getInstance(){
-        return getPlugin(KProfessionsCore.class);
-    }
-
-    public static ProfissionDatabase getDatabase(){
-        return dbManager;
-    };
-
-    public static ConfigManager getConfigManager() {
-        return config;
-    }
-    public static CraftManager getCraftManager() {
-        return craftManager;
-    }
-
-    public static EntityManager getEntityManager(){
-        return  entityManager;
-    }
-
-    public static CooldownsManager getCooldownsManager(){
-        return cooldownsManager;
-    }
-
+    public static JavaPlugin getInstance(){ return getPlugin(KProfessionsCore.class); }
+    public static ProfissionDatabase getDatabase(){ return dbManager; }
+    public static ConfigManager getConfigManager() { return config; }
+    public static CraftManager getCraftManager() { return craftManager; }
+    public static EntityManager getEntityManager(){ return entityManager; }
+    public static CooldownsManager getCooldownsManager(){ return cooldownsManager; }
 
     private void registerCommands(){
         new ProfessionCommand(this, menuHandler);
+        new ProfessionPerfilCommand(this);
         new ReloadCommand(this, config);
     }
 
@@ -111,18 +100,4 @@ public final class KProfessionsCore extends JavaPlugin {
         new SwordAttackTest(this);
         new BandageConsumeEvent(this);
     }
-
-
-
 }
-
-///
-// Core:
-// todo: adicionar o resto dos Dao - pensar na questao de level up, pensar na config de profissao (sem craft)
-//
-// TODO:
-//  - Iniciar combatente
-//  - arrumar a skill primaria de espada
-//  - comando pra remover craft - sem prioridade
-//  - Conquistas crafts - final
-//

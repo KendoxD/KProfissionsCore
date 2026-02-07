@@ -117,6 +117,13 @@ public class ConfigManager {
         }
     }
 
+    public void reloadAll() {
+        plugin.getLogger().info(ChatUtils.color("&e[ConfigManager] Iniciando recarregamento global de configurações..."));
+        reloadAllCraftFiles();
+        reloadAllSkillfiles();
+        plugin.reloadConfig();
+        plugin.getLogger().info(ChatUtils.color("&a[ConfigManager] Configurações recarregadas com sucesso."));
+    }
 
     public void reloadAllCraftFiles() {
         String[] craftFiles = {"medico.yml", "cozinheiro.yml", "combatente.yml"};
@@ -128,6 +135,17 @@ public class ConfigManager {
                 continue;
             }
             plugin.getLogger().severe(ChatUtils.color("&aCraft file reloaded: " + fileName));
+        }
+    }
+    public void reloadAllSkillfiles(){
+        String[] skillFile = {"medico.yml", "cozinheiro.yml", "combatente.yml"};
+        for (String s : skillFile) {
+            YamlConfiguration file = reloadFile(ConfigPaths.PROFISSOES, s);
+            if(file == null){
+                plugin.getLogger().severe(ChatUtils.color("&cFailed to reload skill file: " + s));
+                continue;
+            }
+            plugin.getLogger().severe(ChatUtils.color("&aSkill file reloaded: " + s));
         }
     }
     public @Nullable YamlConfiguration reloadFile(ConfigPaths path, String fileName){

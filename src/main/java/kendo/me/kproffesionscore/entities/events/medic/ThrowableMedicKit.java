@@ -4,6 +4,8 @@ import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.builder.entities.CustomEntity;
 import kendo.me.kproffesionscore.builder.entities.EntityBuilder;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
+import kendo.me.kproffesionscore.professions.Medico;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.utils.skript.SkriptUtils;
@@ -30,11 +32,12 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 public class ThrowableMedicKit implements Listener {
-    //TODO: Javadocs this shit
+
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "medickit-2";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
+    private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public ThrowableMedicKit(JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -59,6 +62,17 @@ public class ThrowableMedicKit implements Listener {
 
         if (player.isSneaking() && (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK)) {
 
+            int requiredLevel = config.getInt("skills." + skillKey + ".level-required", 15);
+            Medico medicoData = medicoDao.load(player.getName());
+            int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
+
+            if (playerLevel < requiredLevel) {
+                player.sendMessage(ChatUtils.color("&c&l(!) &7Seu nível de Médico (&e" + playerLevel + "&7) é insuficiente. Requer nível &6" + requiredLevel));
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                event.setCancelled(true);
+                return;
+            }
+
             int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 40);
 
             if (cooldownsManager.isCooldown(player.getUniqueId(), skillKey)) {
@@ -67,12 +81,20 @@ public class ThrowableMedicKit implements Listener {
                 String message = ChatUtils.color("&2&lCooldown &7[" + progressBar + "&7] &e" + String.format("%.1f", remaining) + "s");
 
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
+                event.setCancelled(true);
                 return;
             }
 
             deployHealingStation(player, item);
-            cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
 
+            if (medicoData != null) {
+                double expToGain = config.getDouble("skills." + skillKey + ".exp-gain", 25.0);
+                medicoData.addExp(expToGain);
+                medicoDao.save(medicoData);
+                player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico (Estação de Cura)!"));
+            }
+
+            cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatUtils.color("&a&l✔ ESTAÇÃO LANÇADA!")));
 
             if (item.getAmount() > 1) {
@@ -157,7 +179,6 @@ public class ThrowableMedicKit implements Listener {
                             if (currentHp < maxHp) {
                                 double amountToHeal = maxHp * healPercent;
                                 SkriptUtils.setVariable(target, "hp", Math.min(maxHp, currentHp + amountToHeal));
-
                                 target.spawnParticle(Particle.VILLAGER_HAPPY, target.getLocation().add(0, 1.5, 0), 3, 0.2, 0.2, 0.2, 0);
                             }
                         }

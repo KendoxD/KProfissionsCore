@@ -2,6 +2,8 @@ package kendo.me.kproffesionscore.entities.events.medic;
 
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
+import kendo.me.kproffesionscore.professions.Medico;
+import kendo.me.kproffesionscore.professions.database.connection.dao.MedicoDao;
 import kendo.me.kproffesionscore.utils.ChatUtils;
 import kendo.me.kproffesionscore.utils.ConfigUtils;
 import kendo.me.kproffesionscore.utils.skript.SkriptUtils;
@@ -30,6 +32,7 @@ public class MedicKitEvent implements Listener {
     private final String skillKey = "medickit";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
+    private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     private final Set<UUID> usingMedicKit = new HashSet<>();
 
@@ -57,6 +60,16 @@ public class MedicKitEvent implements Listener {
 
         if (!player.isSneaking() || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
 
+        int requiredLevel = config.getInt("skills." + skillKey + ".level-required");
+        Medico medicoData = medicoDao.load(player.getName());
+        int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
+
+        if (playerLevel < requiredLevel) {
+            player.sendMessage(ChatUtils.color("&c&l(!) &7Seu nível de Médico (&e" + playerLevel + "&7) é insuficiente. Requer nível &6" + requiredLevel));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
+
         if (usingMedicKit.contains(player.getUniqueId())) return;
 
         double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
@@ -78,11 +91,11 @@ public class MedicKitEvent implements Listener {
     }
 
     private void useMedicKit(Player player, ItemStack item) {
-        int usageTime = config.getInt("skills." + skillKey + ".usage-time", 15);
-        int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 10);
+        int usageTime = config.getInt("skills." + skillKey + ".usage-time");
+        int cooldownTime = config.getInt("skills." + skillKey + ".cooldown");
+        double expToGain = config.getDouble("skills." + skillKey + ".exp-gain");
 
         final UUID uuid = player.getUniqueId();
-        final Location startLoc = player.getLocation();
         final ItemStack itemUsed = item.clone();
 
         usingMedicKit.add(uuid);
@@ -113,7 +126,6 @@ public class MedicKitEvent implements Listener {
                     return;
                 }
 
-                // Partículas e Som
                 double angle = ticks * 0.15;
                 double x = Math.cos(angle) * 0.8;
                 double z = Math.sin(angle) * 0.8;
@@ -129,6 +141,13 @@ public class MedicKitEvent implements Listener {
                 if (ticks >= totalTicks) {
                     double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
                     SkriptUtils.setVariable(player, "hp", maxHp);
+
+                    Medico medico = medicoDao.load(player.getName());
+                    if (medico != null) {
+                        medico.addExp(expToGain);
+                        medicoDao.save(medico);
+                        player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+                    }
 
                     if (item.getAmount() > 1) {
                         item.setAmount(item.getAmount() - 1);
