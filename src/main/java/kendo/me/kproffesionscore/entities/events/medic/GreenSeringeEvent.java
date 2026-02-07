@@ -32,7 +32,6 @@ public class GreenSeringeEvent implements Listener {
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "seringa-verde";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
-    private final YamlConfiguration config = configUtils.getConfigFile("medico");
     private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public GreenSeringeEvent(JavaPlugin plugin) {
@@ -42,6 +41,8 @@ public class GreenSeringeEvent implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL) return;
+        YamlConfiguration config = KProfessionsCore.getConfigManager().getProfessionConfig("medico.yml");
+        if (config == null) return;
 
         ItemStack item = event.getItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -85,11 +86,14 @@ public class GreenSeringeEvent implements Listener {
             }
 
             disparar(player, item);
+
             if (medicoData != null) {
-                double expToGain = config.getDouble("skills." + skillKey + ".exp-gain");
-                medicoData.addExp(expToGain);
+                double baseExp = config.getDouble("skills." + skillKey + ".exp-gain", 5.0);
+                double finalExp = configUtils.calculateDynamicExp(baseExp, playerLevel, requiredLevel);
+
+                medicoData.addExp(finalExp);
                 medicoDao.save(medicoData);
-                player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+                player.sendMessage(ChatUtils.color("&a+ " + String.format("%.1f", finalExp) + " XP de Médico!"));
             }
 
             cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);

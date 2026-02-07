@@ -27,7 +27,6 @@ public class RedSeringeEvent implements Listener {
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "seringa-cura";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
-    private final YamlConfiguration config = configUtils.getConfigFile("medico");
     private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public RedSeringeEvent(JavaPlugin plugin) {
@@ -37,6 +36,10 @@ public class RedSeringeEvent implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL) return;
+
+
+        YamlConfiguration config = KProfessionsCore.getConfigManager().getProfessionConfig("medico.yml");
+        if (config == null) return;
 
         ItemStack item = event.getItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -52,7 +55,8 @@ public class RedSeringeEvent implements Listener {
                 meta.getCustomModelData() != modelData || !meta.getDisplayName().equals(targetName)) return;
 
         if (player.isSneaking() && (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK)) {
-            int requiredLevel = config.getInt("skills." + skillKey + ".level-required");
+
+            int requiredLevel = config.getInt("skills." + skillKey + ".level-required", 10);
             Medico medicoData = medicoDao.load(player.getName());
             int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
 
@@ -86,14 +90,15 @@ public class RedSeringeEvent implements Listener {
 
             double percentHeal = config.getDouble("skills." + skillKey + ".percent-heal", 0.2);
             int effectTime = config.getInt("skills." + skillKey + ".effect-time", 5);
-            double expToGain = config.getDouble("skills." + skillKey + ".exp-gain", 8.5);
+            double baseExp = config.getDouble("skills." + skillKey + ".exp-gain", 8.5);
 
             startSkriptRegenTask(player, percentHeal, effectTime);
 
             if (medicoData != null) {
-                medicoData.addExp(expToGain);
+                double finalExp = configUtils.calculateDynamicExp(baseExp, playerLevel, requiredLevel);
+                medicoData.addExp(finalExp);
                 medicoDao.save(medicoData);
-                player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+                player.sendMessage(ChatUtils.color("&a+ " + String.format("%.1f", finalExp) + " XP de Médico!"));
             }
 
             player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 2.0f);

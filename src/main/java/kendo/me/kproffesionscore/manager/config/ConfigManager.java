@@ -12,7 +12,9 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConfigManager {
 
@@ -21,6 +23,9 @@ public class ConfigManager {
     private String name;
     private File file;
     private YamlConfiguration config;
+
+    // NOVO: Cache para armazenar as configs de profissões para acesso em tempo real
+    private final Map<String, YamlConfiguration> professionConfigs = new HashMap<>();
 
     public ConfigManager(JavaPlugin plugin, String name){
         this.plugin = plugin;
@@ -31,24 +36,32 @@ public class ConfigManager {
     }
 
     /**
+     * Retorna a configuração de uma profissão do cache.
+     * @param fileName Nome do arquivo (ex: medico.yml)
+     */
+    public @Nullable YamlConfiguration getProfessionConfig(String fileName) {
+        return professionConfigs.get(fileName);
+    }
+
+    /**
      * Inicializa os diretorios com base no ENUM ConfigPaths.
      * @throws IOException
      */
     public void initDirectorys() throws IOException {
         plugin.getLogger().severe(ChatUtils.color("&cChecking current directories.. "));
-       for(ConfigPaths path : ConfigPaths.values()){
-           File directory = new File(plugin.getDataFolder(), path.getPath());
-           if(directory.exists() && !directory.isFile()){
-               plugin.getLogger().severe(ChatUtils.color("&aDirectory already exists."));
-               plugin.getLogger().severe("Path: " + directory.getPath());
-               continue;
-           }
-           boolean created = directory.mkdirs();
-           if(created){
-               plugin.getLogger().severe(ChatUtils.color("&aDiretorios criados com sucesso!"));
-               plugin.getLogger().severe("Directory: " + directory.getPath());
-           }
-       }
+        for(ConfigPaths path : ConfigPaths.values()){
+            File directory = new File(plugin.getDataFolder(), path.getPath());
+            if(directory.exists() && !directory.isFile()){
+                plugin.getLogger().severe(ChatUtils.color("&aDirectory already exists."));
+                plugin.getLogger().severe("Path: " + directory.getPath());
+                continue;
+            }
+            boolean created = directory.mkdirs();
+            if(created){
+                plugin.getLogger().severe(ChatUtils.color("&aDiretorios criados com sucesso!"));
+                plugin.getLogger().severe("Directory: " + directory.getPath());
+            }
+        }
     }
 
     public void initFixedFiles() throws IOException {
@@ -58,6 +71,9 @@ public class ConfigManager {
         createFile(ConfigPaths.PROFISSOES.getPath(), "medico.yml");
         createFile(ConfigPaths.PROFISSOES.getPath(), "cozinheiro.yml");
         createFile(ConfigPaths.PROFISSOES.getPath(), "combatente.yml");
+
+        // Carrega os arquivos para o cache ao iniciar
+        reloadAllSkillfiles();
     }
 
     /***
@@ -107,9 +123,9 @@ public class ConfigManager {
         }
 
         try {
-            config = YamlConfiguration.loadConfiguration(targetFile);
+            YamlConfiguration loadedConfig = YamlConfiguration.loadConfiguration(targetFile);
             plugin.getLogger().severe(ChatUtils.color("&aFile reloaded successfully: " + targetFile.getPath()));
-            return config;
+            return loadedConfig;
         } catch (Exception e) {
             plugin.getLogger().severe(ChatUtils.color("&cFailed to reload file: " + targetFile.getPath()));
             e.printStackTrace();
@@ -145,6 +161,8 @@ public class ConfigManager {
                 plugin.getLogger().severe(ChatUtils.color("&cFailed to reload skill file: " + s));
                 continue;
             }
+            // Atualiza o Cache para que os Eventos peguem os dados novos
+            professionConfigs.put(s, file);
             plugin.getLogger().severe(ChatUtils.color("&aSkill file reloaded: " + s));
         }
     }
@@ -163,8 +181,6 @@ public class ConfigManager {
             e.printStackTrace();
         }
     }
-
-
 
 
     public void createFileIfNotExists() throws IOException {

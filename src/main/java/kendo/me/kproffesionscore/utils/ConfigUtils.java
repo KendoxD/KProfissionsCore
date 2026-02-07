@@ -37,4 +37,18 @@ public class ConfigUtils {
         }
         return config;
     }
+    /**
+     * Calcula o XP dinâmico com base na diferença de nível entre o jogador e a skill.
+     * @param baseExp XP base configurado no arquivo YML.
+     * @param playerLevel Nível atual do jogador na profissão.
+     * @param requiredLevel Nível mínimo exigido para usar a skill/craft.
+     * @return XP calculado com redução por nível alto.
+     */
+    public double calculateDynamicExp(double baseExp, int playerLevel, int requiredLevel) {
+        int diff = playerLevel - requiredLevel;
+        if (diff <= 0) return baseExp;
+        double factor = 1.0 - (diff * 0.05);
+        if (factor < 0.10) factor = 0.10;
+        return baseExp * factor;
+    }
 }

@@ -30,7 +30,6 @@ public class BandageConsumeEvent implements Listener {
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "bandagem";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
-    private final YamlConfiguration config = configUtils.getConfigFile("medico");
     private final Set<UUID> usingBandage = new HashSet<>();
     private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
@@ -41,6 +40,9 @@ public class BandageConsumeEvent implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL) return;
+
+        YamlConfiguration config = KProfessionsCore.getConfigManager().getProfessionConfig("medico.yml");
+        if (config == null) return;
 
         ItemStack item = event.getItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -83,15 +85,15 @@ public class BandageConsumeEvent implements Listener {
             return;
         }
 
-        useBandage(player, item);
+        useBandage(player, item, config, playerLevel, requiredLevel);
         event.setCancelled(true);
     }
 
-    private void useBandage(Player player, ItemStack item) {
+    private void useBandage(Player player, ItemStack item, YamlConfiguration config, int playerLevel, int requiredLevel) {
         int usageTime = config.getInt("skills." + skillKey + ".usage-time", 3);
         int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 0);
         double percentHeal = config.getDouble("skills." + skillKey + ".percent-heal", 0.15);
-        double expToGain = config.getDouble("skills." + skillKey + ".exp-gain", 2.0); // Padrão 2.0 se não houver na config
+        double baseExp = config.getDouble("skills." + skillKey + ".exp-gain", 2.0);
 
         final UUID uuid = player.getUniqueId();
         final ItemStack itemUsed = item.clone();
@@ -143,11 +145,13 @@ public class BandageConsumeEvent implements Listener {
                     double finalHp = Math.min(currentHp + (maxHp * percentHeal), maxHp * 0.75);
                     SkriptUtils.setVariable(player, "hp", finalHp);
 
+                    double finalExp = configUtils.calculateDynamicExp(baseExp, playerLevel, requiredLevel);
+
                     Medico medico = medicoDao.load(player.getName());
                     if (medico != null) {
-                        medico.addExp(expToGain);
+                        medico.addExp(finalExp);
                         medicoDao.save(medico);
-                        player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+                        player.sendMessage(ChatUtils.color("&a+ " + String.format("%.1f", finalExp) + " XP de Médico!"));
                     }
 
                     if (item.getAmount() > 1) {

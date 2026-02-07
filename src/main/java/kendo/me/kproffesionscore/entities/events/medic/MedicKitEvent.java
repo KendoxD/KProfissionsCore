@@ -31,7 +31,6 @@ public class MedicKitEvent implements Listener {
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "medickit";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
-    private final YamlConfiguration config = configUtils.getConfigFile("medico");
     private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     private final Set<UUID> usingMedicKit = new HashSet<>();
@@ -43,6 +42,9 @@ public class MedicKitEvent implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL) return;
+
+        YamlConfiguration config = KProfessionsCore.getConfigManager().getProfessionConfig("medico.yml");
+        if (config == null) return;
 
         ItemStack item = event.getItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -60,7 +62,7 @@ public class MedicKitEvent implements Listener {
 
         if (!player.isSneaking() || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
 
-        int requiredLevel = config.getInt("skills." + skillKey + ".level-required");
+        int requiredLevel = config.getInt("skills." + skillKey + ".level-required", 1);
         Medico medicoData = medicoDao.load(player.getName());
         int playerLevel = (medicoData != null) ? medicoData.getProfissionLevel() : 0;
 
@@ -86,14 +88,14 @@ public class MedicKitEvent implements Listener {
             return;
         }
 
-        useMedicKit(player, item);
+        useMedicKit(player, item, config, playerLevel, requiredLevel);
         event.setCancelled(true);
     }
 
-    private void useMedicKit(Player player, ItemStack item) {
-        int usageTime = config.getInt("skills." + skillKey + ".usage-time");
-        int cooldownTime = config.getInt("skills." + skillKey + ".cooldown");
-        double expToGain = config.getDouble("skills." + skillKey + ".exp-gain");
+    private void useMedicKit(Player player, ItemStack item, YamlConfiguration config, int playerLevel, int requiredLevel) {
+        int usageTime = config.getInt("skills." + skillKey + ".usage-time", 15);
+        int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 10);
+        double baseExp = config.getDouble("skills." + skillKey + ".exp-gain", 15.0);
 
         final UUID uuid = player.getUniqueId();
         final ItemStack itemUsed = item.clone();
@@ -142,11 +144,13 @@ public class MedicKitEvent implements Listener {
                     double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
                     SkriptUtils.setVariable(player, "hp", maxHp);
 
+                    double finalExp = configUtils.calculateDynamicExp(baseExp, playerLevel, requiredLevel);
+
                     Medico medico = medicoDao.load(player.getName());
                     if (medico != null) {
-                        medico.addExp(expToGain);
+                        medico.addExp(finalExp);
                         medicoDao.save(medico);
-                        player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico!"));
+                        player.sendMessage(ChatUtils.color("&a+ " + String.format("%.1f", finalExp) + " XP de Médico!"));
                     }
 
                     if (item.getAmount() > 1) {

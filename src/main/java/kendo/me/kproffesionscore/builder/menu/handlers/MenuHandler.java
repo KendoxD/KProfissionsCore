@@ -18,6 +18,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -212,12 +213,12 @@ public class MenuHandler implements Listener {
 
             if (playerLevel < match.getLevelRequired()) {
                 ItemStack errorItem = new ItemStack(Material.BARRIER);
-                org.bukkit.inventory.meta.ItemMeta meta = errorItem.getItemMeta();
+                ItemMeta meta = errorItem.getItemMeta();
                 if (meta != null) {
-                    meta.setDisplayName("§c§lBloqueado!");
+                    meta.setDisplayName(ChatUtils.color("&c&lBloqueado!"));
                     meta.setLore(Arrays.asList(
-                            ChatUtils.color("&7Nível necessário: §e" + match.getLevelRequired()),
-                            ChatUtils.color("&7Seu nível: §c" + playerLevel)
+                            ChatUtils.color("&7Nível necessário: &e" + match.getLevelRequired()),
+                            ChatUtils.color("&7Seu nível: &c" + playerLevel)
                     ));
                     errorItem.setItemMeta(meta);
                 }
@@ -245,7 +246,7 @@ public class MenuHandler implements Listener {
         int playerLevel = KProfessionsCore.getDatabase().getPlayerLevel(player.getDisplayName(), profession);
 
         if (playerLevel < match.getLevelRequired()) {
-            player.sendMessage("§cVocê não possui nível de " + profession + " suficiente!");
+            player.sendMessage(ChatUtils.color("&cVocê não possui nível de " + profession + " suficiente!"));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
@@ -268,7 +269,6 @@ public class MenuHandler implements Listener {
         player.getInventory().addItem(match.getResult());
         player.playSound(player.getLocation(), Sound.ITEM_BOTTLE_FILL, 1f, 1f);
 
-        // --- APLICAÇÃO DE XP DINÂMICO ---
         applyCraftExperience(player, match, profession);
 
         updatePreview(menu, profession);
@@ -281,20 +281,13 @@ public class MenuHandler implements Listener {
         var db = KProfessionsCore.getDatabase();
         int playerLevel = db.getPlayerLevel(player.getDisplayName(), profession);
         int craftLevel = match.getLevelRequired();
-
-        // Fórmula: Base 20 XP + (Nível do Craft * 5)
-        double expGain = 20.0 + (craftLevel * 5.0);
-        int diff = playerLevel - craftLevel;
-
-        // Redução de XP se o player for muito level alto para o craft
-        if (diff >= 10) expGain *= 0.1; // 10% de XP se estiver 10 leveis acima
-        else if (diff >= 5) expGain *= 0.5; // 50% de XP se estiver 5 leveis acima
+        double baseExp = 20.0 + (craftLevel * 5.0);
+        double expGain = config.calculateDynamicExp(baseExp, playerLevel, craftLevel);
 
         if (profession.equalsIgnoreCase("medico")) {
             var dao = new MedicoDao(db.getConnection());
             var medico = dao.load(player.getDisplayName());
             if (medico != null) {
-                // Aqui você deve ter um método no Medico.java chamado addExp(double) que gerencia o level up
                 medico.addExp(expGain);
                 dao.save(medico);
                 player.sendMessage(ChatUtils.color("&a+" + String.format("%.1f", expGain) + " XP de Médico!"));

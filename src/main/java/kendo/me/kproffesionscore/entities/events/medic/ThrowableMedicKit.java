@@ -36,7 +36,6 @@ public class ThrowableMedicKit implements Listener {
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "medickit-2";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
-    private final YamlConfiguration config = configUtils.getConfigFile("medico");
     private final MedicoDao medicoDao = new MedicoDao(KProfessionsCore.getDatabase().getConnection());
 
     public ThrowableMedicKit(JavaPlugin plugin) {
@@ -46,6 +45,8 @@ public class ThrowableMedicKit implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL) return;
+        YamlConfiguration config = KProfessionsCore.getConfigManager().getProfessionConfig("medico.yml");
+        if (config == null) return;
 
         ItemStack item = event.getItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -85,13 +86,15 @@ public class ThrowableMedicKit implements Listener {
                 return;
             }
 
-            deployHealingStation(player, item);
+            deployHealingStation(player, item, config);
 
             if (medicoData != null) {
-                double expToGain = config.getDouble("skills." + skillKey + ".exp-gain", 25.0);
-                medicoData.addExp(expToGain);
+                double baseExp = config.getDouble("skills." + skillKey + ".exp-gain", 25.0);
+                double finalExp = configUtils.calculateDynamicExp(baseExp, playerLevel, requiredLevel);
+
+                medicoData.addExp(finalExp);
                 medicoDao.save(medicoData);
-                player.sendMessage(ChatUtils.color("&a+ " + expToGain + " XP de Médico (Estação de Cura)!"));
+                player.sendMessage(ChatUtils.color("&a+ " + String.format("%.1f", finalExp) + " XP de Médico (Estação de Cura)!"));
             }
 
             cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
@@ -107,7 +110,7 @@ public class ThrowableMedicKit implements Listener {
         }
     }
 
-    private void deployHealingStation(Player player, ItemStack item) {
+    private void deployHealingStation(Player player, ItemStack item, YamlConfiguration config) {
         Location dropLoc = player.getLocation().add(player.getLocation().getDirection().multiply(1.5));
         dropLoc.setY(dropLoc.getY() + 0.2);
 
