@@ -20,12 +20,17 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 public class BandageConsumeEvent implements Listener {
 
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "bandagem";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
+    private final Set<UUID> usingBandage = new HashSet<>();
 
     public BandageConsumeEvent(JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -50,6 +55,9 @@ public class BandageConsumeEvent implements Listener {
                 meta.getCustomModelData() != targetModel || !meta.getDisplayName().equals(targetName)) return;
 
         if (!player.isSneaking() || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
+        if (usingBandage.contains(player.getUniqueId())) {
+            return;
+        }
 
         double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
         double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
@@ -74,8 +82,10 @@ public class BandageConsumeEvent implements Listener {
         int cooldownTime = config.getInt("skills." + skillKey + ".cooldown");
         double percentHeal = config.getDouble("skills." + skillKey + ".percent-heal");
 
-        final Location startLoc = player.getLocation();
+        final UUID uuid = player.getUniqueId();
         final ItemStack itemUsed = item.clone();
+
+        usingBandage.add(uuid);
 
         new BukkitRunnable() {
             int ticks = 0;
@@ -84,26 +94,24 @@ public class BandageConsumeEvent implements Listener {
             @Override
             public void run() {
                 if (!player.isOnline() || player.isDead()) {
+                    usingBandage.remove(uuid);
                     this.cancel();
                     return;
                 }
 
                 if (!player.isSneaking()) {
                     player.sendTitle(ChatUtils.color("&c&lCancelando.."), ChatUtils.color("&7Mantenha o SHIFT pressionado!"), 0, 20, 10);
+                    usingBandage.remove(uuid);
                     this.cancel();
                     return;
                 }
 
                 if (!player.getInventory().getItemInMainHand().isSimilar(itemUsed)) {
                     player.sendTitle(ChatUtils.color("&c&lCancelando.."), ChatUtils.color("&7Você trocou de item!"), 0, 20, 10);
+                    usingBandage.remove(uuid);
                     this.cancel();
                     return;
                 }
-//                if (player.getLocation().distanceSquared(startLoc) > 0.25) {
-//                    player.sendTitle(ChatUtils.color("&c&lCancelando.."), ChatUtils.color("&7Não se mova!"), 0, 20, 10);
-//                    this.cancel();
-//                    return;
-//                }
 
                 double angle = ticks * 0.15;
                 double x = Math.cos(angle) * 0.7;
@@ -113,6 +121,7 @@ public class BandageConsumeEvent implements Listener {
                 if (ticks % 10 == 0) {
                     player.getWorld().playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_LEATHER, 0.8f, 1.2f);
                 }
+
                 String progressBar = cooldownsManager.getProgressBar(totalTicks - ticks, totalTicks, 15, "|", "&a", "&7");
                 player.sendTitle(ChatUtils.color("&f&lEnfaixando..."), ChatUtils.color("&7Segure SHIFT [" + progressBar + "&7]"), 0, 7, 0);
 
@@ -123,6 +132,7 @@ public class BandageConsumeEvent implements Listener {
                     double healAmount = maxHp * percentHeal;
                     double finalHp = Math.min(currentHp + healAmount, maxHp * 0.75);
                     SkriptUtils.setVariable(player, "hp", finalHp);
+
                     if (item.getAmount() > 1) {
                         item.setAmount(item.getAmount() - 1);
                     } else {
@@ -131,7 +141,10 @@ public class BandageConsumeEvent implements Listener {
 
                     player.sendTitle(ChatUtils.color("&a&l✚ Bandagem Aplicada!"), "", 5, 40, 10);
                     player.getWorld().playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-                    cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
+
+                    cooldownsManager.setCooldown(uuid, skillKey, cooldownTime);
+
+                    usingBandage.remove(uuid);
                     this.cancel();
                 }
                 ticks += 2;

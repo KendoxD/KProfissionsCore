@@ -1,4 +1,5 @@
 package kendo.me.kproffesionscore.entities.events.medic;
+
 import kendo.me.kproffesionscore.KProfessionsCore;
 import kendo.me.kproffesionscore.manager.config.CooldownsManager;
 import kendo.me.kproffesionscore.utils.ChatUtils;
@@ -19,12 +20,18 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 public class MedicKitEvent implements Listener {
-    //TODO: Javadocs this shit
+
     private final ConfigUtils configUtils = new ConfigUtils();
     private final String skillKey = "medickit";
     private final CooldownsManager cooldownsManager = KProfessionsCore.getCooldownsManager();
     private final YamlConfiguration config = configUtils.getConfigFile("medico");
+
+    private final Set<UUID> usingMedicKit = new HashSet<>();
 
     public MedicKitEvent(JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -50,6 +57,8 @@ public class MedicKitEvent implements Listener {
 
         if (!player.isSneaking() || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
 
+        if (usingMedicKit.contains(player.getUniqueId())) return;
+
         double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
         double maxHp = SkriptUtils.getSkriptVariable(player, "hpmax");
 
@@ -72,8 +81,11 @@ public class MedicKitEvent implements Listener {
         int usageTime = config.getInt("skills." + skillKey + ".usage-time", 15);
         int cooldownTime = config.getInt("skills." + skillKey + ".cooldown", 10);
 
+        final UUID uuid = player.getUniqueId();
         final Location startLoc = player.getLocation();
         final ItemStack itemUsed = item.clone();
+
+        usingMedicKit.add(uuid);
 
         new BukkitRunnable() {
             int ticks = 0;
@@ -82,27 +94,26 @@ public class MedicKitEvent implements Listener {
             @Override
             public void run() {
                 if (!player.isOnline() || player.isDead()) {
+                    usingMedicKit.remove(uuid);
                     this.cancel();
                     return;
                 }
+
                 if (!player.isSneaking()) {
                     player.sendTitle(ChatUtils.color("&c&lCancelando.."), ChatUtils.color("&7Mantenha o SHIFT pressionado!"), 0, 20, 10);
+                    usingMedicKit.remove(uuid);
                     this.cancel();
                     return;
                 }
 
                 if (!player.getInventory().getItemInMainHand().isSimilar(itemUsed)) {
                     player.sendTitle(ChatUtils.color("&c&lCancelando.."), ChatUtils.color("&7Você trocou de item!"), 0, 20, 10);
+                    usingMedicKit.remove(uuid);
                     this.cancel();
                     return;
                 }
 
-//                if (player.getLocation().distanceSquared(startLoc) > 0.25) {
-//                    player.sendTitle(ChatUtils.color("&c&lCancelando,,"), ChatUtils.color("&7Não se mova!"), 0, 20, 10);
-//                    this.cancel();
-//                    return;
-//                }
-
+                // Partículas e Som
                 double angle = ticks * 0.15;
                 double x = Math.cos(angle) * 0.8;
                 double z = Math.sin(angle) * 0.8;
@@ -127,7 +138,10 @@ public class MedicKitEvent implements Listener {
 
                     player.sendTitle(ChatUtils.color("&a&l✚ Curado!"), "", 5, 40, 10);
                     player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 0.5f);
-                    cooldownsManager.setCooldown(player.getUniqueId(), skillKey, cooldownTime);
+
+                    cooldownsManager.setCooldown(uuid, skillKey, cooldownTime);
+
+                    usingMedicKit.remove(uuid);
                     this.cancel();
                 }
                 ticks += 2;
