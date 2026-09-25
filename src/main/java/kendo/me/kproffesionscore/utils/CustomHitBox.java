@@ -3,11 +3,17 @@ package kendo.me.kproffesionscore.utils;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
+
 import java.util.List;
 
 public class CustomHitBox {
     private double width, height;
     private boolean isSmall;
+
+    // Offset abaixo do ponto de referência quando não seguindo a cabeça.
+    // Usado tanto em isInside() quanto em draw() para que a caixa desenhada
+    // seja EXATAMENTE a mesma usada na detecção de dano.
+    private static final double BASE_Y_OFFSET = 0.1;
 
     public CustomHitBox(double width, double height, boolean isSmall) {
         this.width = width;
@@ -22,35 +28,49 @@ public class CustomHitBox {
     public boolean isInside(Location entityLoc, Location point, boolean followHead) {
         double hw = width / 2;
         double offset = getVerticalOffset(followHead);
-
         double minX = entityLoc.getX() - hw;
         double maxX = entityLoc.getX() + hw;
-        double minY = (entityLoc.getY() + offset) - (followHead ? height / 2 : 0.1);
+        double minY = (entityLoc.getY() + offset) - (followHead ? height / 2 : BASE_Y_OFFSET);
         double maxY = minY + height;
         double minZ = entityLoc.getZ() - hw;
         double maxZ = entityLoc.getZ() + hw;
-
         return (point.getX() >= minX && point.getX() <= maxX) &&
                 (point.getY() >= minY && point.getY() <= maxY) &&
                 (point.getZ() >= minZ && point.getZ() <= maxZ);
     }
 
+    /**
+     * Bounding box real da hitbox, na mesma geometria usada por isInside()/draw().
+     * Usar isso com BoundingBox.overlaps(target.getBoundingBox()) é bem mais
+     * confiável do que testar 1 ou 2 pontos do alvo (pés, peito etc.), porque
+     * cobre o volume inteiro do alvo, independente da altura/hitbox dele.
+     */
+    public org.bukkit.util.BoundingBox toBoundingBox(Location entityLoc, boolean followHead) {
+        double hw = width / 2;
+        double offset = getVerticalOffset(followHead);
+        double minX = entityLoc.getX() - hw;
+        double maxX = entityLoc.getX() + hw;
+        double minY = (entityLoc.getY() + offset) - (followHead ? height / 2 : BASE_Y_OFFSET);
+        double maxY = minY + height;
+        double minZ = entityLoc.getZ() - hw;
+        double maxZ = entityLoc.getZ() + hw;
+        return new org.bukkit.util.BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
     public void draw(Location entityLoc, List<Player> viewers, boolean followHead) {
         if (viewers == null || viewers.isEmpty()) {
-            System.out.println(viewers);
-            System.out.println("vazio?");
             return;
         }
         double hw = width / 2;
         double offset = getVerticalOffset(followHead);
-
         double minX = entityLoc.getX() - hw;
         double maxX = entityLoc.getX() + hw;
-        double minY = (entityLoc.getY() + offset) - (followHead ? height / 2 : 0);
+        // Mesmo offset de isInside() — antes aqui usava 0 em vez de BASE_Y_OFFSET,
+        // fazendo a caixa desenhada não bater com a caixa real de colisão.
+        double minY = (entityLoc.getY() + offset) - (followHead ? height / 2 : BASE_Y_OFFSET);
         double maxY = minY + height;
         double minZ = entityLoc.getZ() - hw;
         double maxZ = entityLoc.getZ() + hw;
-
         for (double x = minX; x <= maxX; x += 0.2) {
             spawnParticle(viewers, x, minY, minZ); spawnParticle(viewers, x, maxY, minZ);
             spawnParticle(viewers, x, minY, maxZ); spawnParticle(viewers, x, maxY, maxZ);

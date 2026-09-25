@@ -42,7 +42,6 @@ public class MedicKitEvent implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.PHYSICAL) return;
-
         YamlConfiguration config = KProfessionsCore.getConfigManager().getProfessionConfig("medico.yml");
         if (config == null) return;
 
@@ -71,7 +70,6 @@ public class MedicKitEvent implements Listener {
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
-
         if (usingMedicKit.contains(player.getUniqueId())) return;
 
         double currentHp = SkriptUtils.getSkriptVariable(player, "hp");
@@ -81,7 +79,6 @@ public class MedicKitEvent implements Listener {
             player.sendMessage(ChatUtils.color("&cVocê já está com a vida cheia!"));
             return;
         }
-
         if (cooldownsManager.isCooldown(player.getUniqueId(), skillKey)) {
             double remaining = cooldownsManager.getRemaining(player.getUniqueId(), skillKey);
             player.sendMessage(ChatUtils.color("&cMedicKit em recarga: &f" + String.format("%.1f", remaining) + "s"));

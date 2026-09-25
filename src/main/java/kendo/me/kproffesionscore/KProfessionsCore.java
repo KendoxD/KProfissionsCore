@@ -1,7 +1,9 @@
 package kendo.me.kproffesionscore;
 
 import kendo.me.kproffesionscore.commands.profession.ProfessionPerfilCommand;
-import kendo.me.kproffesionscore.entities.events.combatente.SwordAttackTest;
+import kendo.me.kproffesionscore.commands.profession.admin.subcommands.ProfessionAdminCommands;
+import kendo.me.kproffesionscore.entities.events.combatente.roger.AceAirSlash;
+import kendo.me.kproffesionscore.entities.events.combatente.roger.AceSlash;
 import kendo.me.kproffesionscore.entities.events.medic.*;
 import kendo.me.kproffesionscore.entities.manager.EntityManager;
 import kendo.me.kproffesionscore.builder.menu.handlers.MenuHandler;
@@ -90,6 +92,7 @@ public final class KProfessionsCore extends JavaPlugin {
         new ProfessionCommand(this, menuHandler);
         new ProfessionPerfilCommand(this);
         new ReloadCommand(this, config);
+        new ProfessionAdminCommands(this, config, dbManager);
     }
 
     private void registerEvents(){
@@ -97,7 +100,17 @@ public final class KProfessionsCore extends JavaPlugin {
         new RedSeringeEvent(this);
         new MedicKitEvent(this);
         new ThrowableMedicKit(this);
-        new SwordAttackTest(this);
+        new AceSlash(this);
+        new AceAirSlash(this);
         new BandageConsumeEvent(this);
     }
 }
+
+/**
+ * TODO:
+ *  - Terminar as skills de combatente, as skills da espada roger tem que ser tudo na mesma espada?
+ *  - Colocar o haki do rei (pensar em uma forma de implementar, nao seria das profissoes o haki)
+ *  - Testar localmente
+ *  - Testar no server
+ *  - remover debugs
+ */

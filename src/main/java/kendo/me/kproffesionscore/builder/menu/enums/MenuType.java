@@ -7,7 +7,7 @@ public enum MenuType {
     MENU_FORJA(new int[]{}){
         @Override
         public String getTitle(ConfigUtils manager){
-            return "";
+            return ChatUtils.color(manager.getTitleCombatenteMenu());
         }
 
         @Override

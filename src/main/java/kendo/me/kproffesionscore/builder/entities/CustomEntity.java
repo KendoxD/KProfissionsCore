@@ -12,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -170,8 +171,16 @@ public class CustomEntity {
     }
     public void drawHitbox() {
         if (debugMode) {
-        hitBox.draw(currentLocation, getViewers(), false);
-    } }
+            hitBox.draw(currentLocation, getViewers(), false);
+        } }
     public boolean isInside(Location pt) { return hitBox.isInside(currentLocation, pt, false); }
+
+    /**
+     * Bounding box real da hitbox na posição atual do slash, pra colisão
+     * precisa contra a bounding box do alvo (target.getBoundingBox()) em vez
+     * de testar só 1 ou 2 pontos.
+     */
+    public BoundingBox getBoundingBox() { return hitBox.toBoundingBox(currentLocation, false); }
+
     public Location getEntityLocation() { return currentLocation; }
 }

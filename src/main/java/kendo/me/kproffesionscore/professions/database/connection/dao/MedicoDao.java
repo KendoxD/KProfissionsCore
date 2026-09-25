@@ -15,7 +15,6 @@ public class MedicoDao {
     public MedicoDao(Connection connection) {
         this.connection = connection;
     }
-
     public void save(Medico m) {
         String sql = """
                 INSERT INTO medico (nick, professionLevel, professionXp, mastery, healLevel, medicinePower, medicalMastery)
@@ -28,7 +27,6 @@ public class MedicoDao {
                 medicinePower=excluded.medicinePower,
                 medicalMastery=excluded.medicalMastery;
                 """;
-
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, m.getNick());
             ps.setInt(2, m.getProfissionLevel());
